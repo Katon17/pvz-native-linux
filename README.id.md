@@ -30,6 +30,30 @@ lalu menjalankan game sebagai program Linux biasa.
 
 ---
 
+## Tangkapan layar
+
+Kedua gambar diambil dari ThinkPad X270 yang sama, Linux Mint 22.3 XFCE,
+resolusi 1366×768 dengan **Fill Screen (16:9)** aktif — tanpa batang hitam,
+tanpa Wine, tanpa emulator.
+
+| Menu utama | Panel Tentang, di dalam game |
+|---|---|
+| [![Menu utama](docs/screenshots/menu.jpg)](docs/screenshots/menu.jpg) | [![Panel Tentang](docs/screenshots/about.jpg)](docs/screenshots/about.jpg) |
+
+Gambar kedua menunjukkan dialog **Tentang** yang bisa dibuka dari *Options*:
+kredit pembuat dan tombol donasi Saweria / Ko-fi adalah tombol sungguhan yang
+bisa diklik di dalam engine — bukan jendela GTK terpisah.
+
+> **Kedua tangkapan layar ini memuat karya seni Plants vs. Zombies,
+> © Electronic Arts Inc.** Gambar disertakan sebagai tangkapan faktual dari
+> perangkat lunak yang sedang berjalan, untuk keperluan dokumentasi dan
+> peninjauan saja. Gambar **bukan** bagian dari paket, **tidak** dilisensikan
+> di bawah GPL, dan **bukan** penawaran untuk mendistribusikan aset game.
+> Lihat [NOTICE](NOTICE). Hanya tangkapan gameplay asli yang diterima — jangan
+> kirim karya seni, isi `main.pak`, atau berkas aset.
+
+---
+
 ## Dokumentasi
 
 Setiap dokumen tersedia dalam **English** dan **Indonesia**. Berkas tanpa akhiran

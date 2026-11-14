@@ -40,6 +40,29 @@ game as a **normal native Linux program** — no Wine, no emulator, no Proton.
 
 ---
 
+## Screenshots
+
+Both screenshots are from the same ThinkPad X270 running Linux Mint 22.3 XFCE,
+captured at 1366×768 with **Fill Screen (16:9)** enabled — no black bars, no
+Wine, no emulator.
+
+| Main menu | About panel, inside the game |
+|---|---|
+| [![Main menu](docs/screenshots/menu.jpg)](docs/screenshots/menu.jpg) | [![About panel](docs/screenshots/about.jpg)](docs/screenshots/about.jpg) |
+
+The second one shows the in-game **About** dialog reachable from *Options*: the
+author credit and the Saweria / Ko-fi donation buttons are real, clickable
+buttons inside the engine — not a separate GTK window.
+
+> **These screenshots contain Plants vs. Zombies artwork, © Electronic Arts
+> Inc.** They are included here as factual screenshots of the software running
+> for documentation and review purposes only. They are **not** part of the
+> package, are **not** licensed under the GPL, and are **not** an offer to
+> distribute game assets. See [NOTICE](NOTICE). Only real gameplay captures are
+> accepted — do not send artwork, `main.pak` contents, or asset files.
+
+---
+
 ## Documentation
 
 Every document is available in **English** and **Indonesian**. Files without an

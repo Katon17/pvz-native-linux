@@ -14,6 +14,27 @@ versi mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 
 ## [0.5.2] — 2026-11-14
 
+### Ditambahkan — tangkapan layar di README
+Permintaan: "tambahin 2 foto ini dong di readme biar orang lihat ga bosan".
+
+- `docs/screenshots/menu.jpg` (189 KB) — menu utama, 1366×768 penuh.
+- `docs/screenshots/about.jpg` (155 KB) — panel Tentang in-game dengan tombol
+  donasi Saweria & Ko-fi.
+- Keduanya diambil di ThinkPad X270 / Linux Mint 22.3 XFCE dengan
+  **Fill Screen (16:9)** aktif, jadi sekaligus jadi bukti widescreen berjalan:
+  tidak ada pillarbox 4:3, tidak ada Wine atau emulator.
+- Galeri ditambahkan ke `README.md` (**Screenshots**) dan `README.id.md`
+  (**Tangkapan layar**), berupa tabel dua kolom yang gambarnya bisa diklik
+  untuk melihat ukuran penuh.
+- PNG asli 1,3 MB + 911 KB dikompres ke JPEG progresif 1280×720 — total turun
+  dari **2,2 MB ke 344 KB** tanpa kehilangan detail yang terlihat.
+- **Pernyataan legal ditambahkan** karena gambar memuat karya seni EA:
+  - `NOTICE` §3b — tangkapan layar bukan bagian paket, bukan GPL, bukan
+    distribusi aset.
+  - `docs/PROTECTION.md` §4 + `.id.md` — aturan yang sama untuk kontributor.
+- CI `attribution` kini menolak berkas gambar di luar `docs/screenshots/` dan
+  `icons/`, serta menolak gambar > 400 KB di folder tangkapan layar.
+
 ### Ditambahkan — dokumentasi dua bahasa (English / Indonesia)
 Dilaporkan: "repo nya masih di dominasi bahasa indonesia di .md".
 

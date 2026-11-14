@@ -95,6 +95,21 @@ Supaya jelas dan tidak menyesatkan:
 keputusan hukum. Kalau kamu menemukan aset game di dalam paket rilis, itu bug
 serius; laporkan lewat Security Policy.
 
+### Tangkapan layar dalam dokumentasi
+
+`docs/screenshots/` memuat dua tangkapan layar faktual dari perangkat lunak yang
+sedang berjalan. Gambar itu memang menampilkan karya seni PvZ milik Electronic
+Arts. Disertakan **hanya** sebagai bukti dokumenter bahwa port ini benar-benar
+berjalan native, dalam koridor fair use / fair dealing, dan:
+
+- **bukan** bagian dari `.deb` maupun tarball rilis,
+- **tidak** dilisensikan di bawah GPL,
+- **bukan** distribusi aset game.
+
+Untuk kontributor: kirim hanya tangkapan asli dari game yang kamu jalankan
+sendiri. Jangan kirim berkas karya seni, isi `main.pak`, atau aset hasil ekstrak
+dalam bentuk apa pun.
+
 ---
 
 ## 5. Merek & identitas proyek

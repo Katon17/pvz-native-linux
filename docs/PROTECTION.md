@@ -95,6 +95,20 @@ To be clear and not misleading:
 coincidence — it is a legal decision. If you find game assets inside a release
 package, that is a serious bug; report it through the Security Policy.
 
+### Screenshots in the documentation
+
+`docs/screenshots/` contains two factual screenshots of the software running.
+They necessarily show PvZ artwork that belongs to Electronic Arts. They are
+included **only** as documentary evidence that the port runs natively, under
+fair use / fair dealing, and they are:
+
+- **not** part of the `.deb` or release tarball,
+- **not** licensed under the GPL,
+- **not** a distribution of game assets.
+
+Contributors: send only real captures of your own running game. Do not send
+artwork files, `main.pak` contents, or extracted assets in any form.
+
 ---
 
 ## 5. Trademark & project identity

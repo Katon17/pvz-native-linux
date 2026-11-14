@@ -76,6 +76,31 @@ jobs:
           fi
           echo "OK: tidak ada aset game di repo"
 
+      - name: Tangkapan layar hanya boleh di docs/screenshots
+        run: |
+          set -euo pipefail
+          # docs/screenshots/ memang memuat karya seni EA (tangkapan faktual,
+          # lihat NOTICE 3b). Di luar folder itu, tidak boleh ada berkas gambar
+          # sama sekali — itu mencegah aset game diselundupkan sebagai "gambar".
+          nyasar="$(git ls-files | grep -iE '\.(png|jpe?g|webp|bmp|gif|tga)$' \
+                     | grep -vE '^docs/screenshots/[^/]+\.(png|jpe?g)$' \
+                     | grep -vE '^icons/' || true)"
+          if [ -n "$nyasar" ]; then
+            echo "::error::berkas gambar di luar docs/screenshots atau icons/:"
+            echo "$nyasar"
+            exit 1
+          fi
+          # batasi ukuran supaya repo tidak membengkak
+          for f in docs/screenshots/*.jpg docs/screenshots/*.png; do
+            [ -f "$f" ] || continue
+            kb=$(( $(stat -c%s "$f") / 1024 ))
+            if [ "$kb" -gt 400 ]; then
+              echo "::error file=$f::gambar ${kb}KB, maksimum 400KB — kompres dulu"
+              exit 1
+            fi
+          done
+          echo "OK: gambar hanya di docs/screenshots & icons/, ukuran wajar"
+
       - name: Tolak kredensial yang tidak sengaja ter-commit
         run: |
           set -euo pipefail

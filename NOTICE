@@ -41,6 +41,20 @@ atau merek terdaftar milik Electronic Arts Inc. Proyek ini tidak resmi,
 non-komersial, dan TIDAK berafiliasi dengan, disponsori oleh, atau
 didukung oleh Electronic Arts Inc. maupun PopCap Games.
 
+3b. TANGKAPAN LAYAR DALAM DOKUMENTASI
+-------------------------------------
+Folder docs/screenshots/ memuat tangkapan layar faktual dari perangkat lunak
+yang sedang berjalan. Gambar tersebut menampilkan karya seni Plants vs.
+Zombies yang hak ciptanya milik Electronic Arts Inc.
+
+  - Disertakan HANYA untuk dokumentasi dan peninjauan (fair use / fair dealing).
+  - BUKAN bagian dari paket .deb maupun tarball rilis.
+  - TIDAK dilisensikan di bawah GPL-3.0.
+  - BUKAN penawaran untuk mendistribusikan aset game dalam bentuk apa pun.
+
+Tujuan folder itu satu: menunjukkan bahwa launcher ini benar-benar berjalan di
+Linux tanpa Wine atau emulator. Tidak ada berkas aset game yang disertakan.
+
 4. STATUS PROYEK
 ----------------
 Proyek ini adalah alat kompatibilitas dan pelestarian (preservation) untuk
