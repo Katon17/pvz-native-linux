@@ -21,13 +21,16 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP="pvz-native"
 APP_ID="io.github.katon17.pvz-native"
-# Engine ini adalah build lokal dari source upstream + patch widescreen
-# (PVZ_WIDESCREEN). Bukan binary rilis resmi, jadi checksum-nya milik kita.
-ENGINE_VERSION="0.2.7-widescreen"
-ENGINE_URL="https://github.com/wszqkzqk/PvZ-Portable/releases/download/${ENGINE_VERSION}/pvz-portable-linux-static-x86_64"
-# SHA-256 binary engine static dari rilis upstream 0.2.7. Ganti hanya kalau
-# versi engine di-update, dan verifikasi ulang manual.
-ENGINE_SHA256="77f98a455c450506b343c28a4251079424443b697fc203a1a32a6a8d0401b05e"
+# Engine PvZ-Portable resmi dari upstream. build-deb.sh TIDAK membangun engine
+# sendiri: patch widescreen sudah diterapkan lewat registry (lihat
+# tools/pvznative/display.py + docs/ARCHITECTURE.md), bukan dengan menambal
+# biner. Jadi checksum di sini WAJIB sama dengan artefak rilis upstream.
+ENGINE_VERSION="0.2.7"
+ENGINE_ASSET="pvz-portable-linux-static-x86_64"
+ENGINE_URL="https://github.com/wszqkzqk/PvZ-Portable/releases/download/${ENGINE_VERSION}/${ENGINE_ASSET}"
+# SHA-256 artefak rilis upstream (diverifikasi ulang 2026-11-14):
+#   curl -sL "$ENGINE_URL" | sha256sum
+ENGINE_SHA256="add5bc1b68d6c2a7deba6e8195a1c55c342d6d5ef4bf13af99751b8ed65aa8d9"
 
 VERSION="$(cat "${ROOT}/VERSION" 2>/dev/null | tr -d '[:space:]')"
 VERSION="${VERSION:-0.1.0}"

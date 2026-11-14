@@ -54,6 +54,10 @@ https://github.com/wszqkzqk/PvZ-Portable untuk detail dan lisensinya.
 
 5. LISENSI KOMPONEN
 -------------------
+Hak cipta atas launcher, wizard, dan skrip packaging:
+  (C) 2026 Katon Bagaskoro <cimong2356@gmail.com>
+Dirilis di bawah GNU GPL versi 3 atau lebih baru (GPL-3.0-or-later).
+
   launcher, wizard, packaging   : GPL-3.0-or-later
   engine PvZ-Portable (bundled) : LGPL-3.0-or-later
   SDL3, SDL3_mixer              : zlib license
