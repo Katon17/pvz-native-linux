@@ -1,72 +1,74 @@
-# Arsitektur & Alur Data
+# Architecture & Data Flow
 
-Dokumen ini menjelaskan **bagaimana bagian-bagian proyek bekerja sama**, untuk
-orang yang ingin memodifikasi atau mengaudit kode.
+This document explains **how the parts of the project work together**, for
+anyone who wants to modify or audit the code.
+
+> **Bahasa Indonesia**: lihat [ARCHITECTURE.id.md](ARCHITECTURE.id.md)
 
 ---
 
-## 1. Gambaran besar
+## 1. Big picture
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Pengguna                                                        │
-│    ├── Menu aplikasi  ──► pvz-native (skrip sh)                  │
-│    ├── Menu "Pengaturan" ─► pvz-native --settings                │
-│    └── Menu "Tentang"    ─► pvz-native --about                   │
+│  User                                                            │
+│    ├── Application menu  ──► pvz-native (sh script)              │
+│    ├── "Settings" menu   ─► pvz-native --settings                │
+│    └── "About" menu      ─► pvz-native --about                   │
 └──────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│  /usr/bin/pvz-native            (POSIX sh, ~380 baris)           │
-│    • parse argumen                                               │
-│    • cek aset ada / belum                                        │
+│  /usr/bin/pvz-native            (POSIX sh, ~380 lines)           │
+│    • parse arguments                                             │
+│    • check whether assets are present                            │
 │    • export PVZ_WIDESCREEN                                       │
-│    • exec engine                                                 │
+│    • exec the engine                                             │
 └──────────────────────────────────────────────────────────────────┘
         │                              │
-        │ aset belum ada               │ aset ada
+        │ assets missing               │ assets present
         ▼                              ▼
 ┌──────────────────────────┐   ┌──────────────────────────────────┐
 │ python3 -m pvznative     │   │ /usr/lib/pvz-native/engine/      │
-│   setup  (wizard)        │   │   pvz-portable  (biner statis)   │
-│   • deteksi ISO/ZIP/EXE  │   │   -resdir <assets>/              │
-│   • scan & ekstrak       │   │   -savedir <saves>/              │
-│   • verifikasi           │   └──────────────────────────────────┘
+│   setup  (wizard)        │   │   pvz-portable  (static binary)  │
+│   • detect ISO/ZIP/EXE   │   │   -resdir <assets>/              │
+│   • scan & extract       │   │   -savedir <saves>/              │
+│   • verify               │   └──────────────────────────────────┘
 └──────────────────────────┘
 ```
 
 ---
 
-## 2. Lapisan kode
+## 2. Code layers
 
-| Lapisan | Lokasi | Bahasa | Tugas |
+| Layer | Location | Language | Responsibility |
 |---|---|---|---|
-| **Launcher** | `scripts/pvz-native` | POSIX sh | Parsing argumen, cek aset, exec engine. Sengaja "bodoh" — semua logika berat di Python. |
-| **Wizard & alat** | `tools/pvznative/` | Python 3.9+ | Deteksi sumber aset, ekstraksi CAB/ZIP/ISO, verifikasi, diagnosa. |
-| **GUI** | `tools/pvznative/settings_gui.py`, `about.py` | Python + GTK3 | Jendela Pengaturan dan Tentang. |
-| **Packaging** | `build-deb.sh`, `packaging/debian/` | sh + dpkg | Membangun `.deb` dan `.tar.gz`, menanam checksum engine. |
-| **Engine** | `lib/pvz-native/engine/pvz-portable` | C++20 (biner) | PvZ-Portable — di-build terpisah, lihat §5. |
-| **Test** | `tests/` | Python unittest | 68 test, tanpa perlu aset game asli. |
+| **Launcher** | `scripts/pvz-native` | POSIX sh | Argument parsing, asset check, exec engine. Deliberately "dumb" — all heavy logic lives in Python. |
+| **Wizard & tools** | `tools/pvznative/` | Python 3.9+ | Source detection, CAB/ZIP/ISO extraction, verification, diagnostics. |
+| **GUI** | `tools/pvznative/settings_gui.py`, `about.py` | Python + GTK3 | Settings and About windows. |
+| **Packaging** | `build-deb.sh`, `packaging/debian/` | sh + dpkg | Builds `.deb` and `.tar.gz`, embeds the engine checksum. |
+| **Engine** | `lib/pvz-native/engine/pvz-portable` | C++20 (binary) | PvZ-Portable — built separately, see §5. |
+| **Tests** | `tests/` | Python unittest | 68 tests, no real game assets needed. |
 
-### Mengapa launcher ditulis sh, bukan Python?
+### Why is the launcher written in sh, not Python?
 
-Supaya tetap jalan walau Python rusak, dan supaya `pvz-native --where` tetap
-bisa dipakai untuk mendiagnosa masalah Python. Aturan: **launcher tidak boleh
-mengandung logika yang perlu di-test.** Semua yang bercabang rumit ada di
-`tools/pvznative/` yang punya test.
+So it still runs when Python is broken, and so `pvz-native --where` remains
+usable for diagnosing Python problems. The rule: **the launcher must not contain
+logic that needs testing.** Everything with non-trivial branching lives in
+`tools/pvznative/`, which has tests.
 
 ---
 
-## 3. Alur data aset
+## 3. Asset data flow
 
-Aset **tidak pernah** ikut di dalam paket. Alurnya:
+Assets are **never** shipped inside the package. The flow is:
 
 ```
-Sumber milik pengguna              Data pengguna
-─────────────────────              ─────────────
+Source owned by the user         User data
+────────────────────────         ──────────
 ISO installer        ──┐
 ZIP                  ──┤
-Folder game          ──┼──► wizard ──► ~/.local/share/pvz-native/
+Game folder          ──┼──► wizard ──► ~/.local/share/pvz-native/
 Installer .exe       ──┘   (selective)     ├── assets/
                                             │   ├── main.pak
                                             │   └── properties/
@@ -74,151 +76,161 @@ Installer .exe       ──┘   (selective)     ├── assets/
                                             └── logs/
 ```
 
-**Yang diekstrak hanya dua hal:** `main.pak` dan folder `properties/`.
-Sisanya (installer, sisa ISO) tidak disalin dan tidak diubah.
+**Only two things are extracted:** `main.pak` and the `properties/` folder.
+Everything else (the installer, the rest of the ISO) is neither copied nor
+modified.
 
-### Deteksi sumber
+### Source detection
 
-| Jenis | Cara dideteksi |
+| Type | How it is detected |
 |---|---|
-| ISO 9660 | Magic `CD001` di offset 0x8001; level-1 uppercase ditangani (matching case-insensitive) |
-| ZIP | Magic `PK\x03\x04` |
-| Folder | Cek keberadaan `main.pak` + `properties/` |
-| Installer `.exe` | Payload CAB dicari lewat magic `MSCF` di dalam biner, lalu `cabextract -F "*main.pak"` |
+| ISO 9660 | `CD001` magic at offset 0x8001; level-1 uppercase names handled (case-insensitive matching) |
+| ZIP | `PK\x03\x04` magic |
+| Folder | Check for the presence of `main.pak` + `properties/` |
+| Installer `.exe` | CAB payload located via the `MSCF` magic inside the binary, then `cabextract -F "*main.pak"` |
 
-**Jebakan yang sudah ditangani:** ISO level-1 menyimpan nama folder dalam
-huruf besar (`PROPERTIES/`), sedangkan kode mengharapkan `properties/`.
-Pencocokan dilakukan case-insensitive untuk semua nama di dalam arsip.
+**Pitfalls already handled:** a level-1 ISO stores folder names in uppercase
+(`PROPERTIES/`), while the code expects `properties/`. All names inside an
+archive are matched case-insensitively.
 
 ---
 
-## 4. Preferensi & penyimpanan state
+## 4. Preferences & state storage
 
-| State | Lokasi | Format |
+| State | Location | Format |
 |---|---|---|
-| Aset | `$XDG_DATA_HOME/pvz-native/assets/` | binary (dari pengguna) |
-| Save game | `$XDG_DATA_HOME/pvz-native/saves/` | `userdata/` + `registry.regemu` |
-| Log | `$XDG_DATA_HOME/pvz-native/logs/` | teks |
-| Preferensi widescreen | `$XDG_CONFIG_HOME/pvz-native/widescreen` | `"1"` / `"0"` |
-| Mode layar | `saves/registry.regemu` | custom binary, key `ScreenMode` |
+| Assets | `$XDG_DATA_HOME/pvz-native/assets/` | binary (from the user) |
+| Save games | `$XDG_DATA_HOME/pvz-native/saves/` | `userdata/` + `registry.regemu` |
+| Logs | `$XDG_DATA_HOME/pvz-native/logs/` | text |
+| Widescreen preference | `$XDG_CONFIG_HOME/pvz-native/widescreen` | `"1"` / `"0"` |
+| Screen mode | `saves/registry.regemu` | custom binary, key `ScreenMode` |
 
-### Format `registry.regemu`
+### `registry.regemu` format
 
 ```
 "REGEMU" | u16 version=1 | u32 numKeys |
   per key: u32 nameLen | name (utf-8) | u8 type | value
 ```
 
-Type `4` = integer, `2` = float, `1` = key kosong. Key yang benar-benar ditulis
+Type `4` = integer, `2` = float, `1` = empty key. Keys actually written by the
 engine: `CustomCursors, InProgress, MusicVolume, Muted, PreferredX, PreferredY,
 ScreenMode, SfxVolume, WidescreenStretch, WaitForVSync`.
 
-Diubah lewat `pvznative/display.py` (CLI) dan `settings_gui.py` (GUI) — keduanya
-memakai fungsi yang sama, jadi tidak ada logika ganda.
+Modified through `pvznative/display.py` (CLI) and `settings_gui.py` (GUI) — both
+use the same functions, so there is no duplicated logic.
 
 ---
 
-## 5. Patch engine
+## 5. Engine patching
 
-Engine adalah **biner pihak ketiga** (PvZ-Portable, LGPL-3.0). Kami tidak
-mengubah apa pun tanpa mendokumentasikannya.
+The engine is a **third-party binary** (PvZ-Portable, LGPL-3.0). We change
+nothing without documenting it.
 
-| Berkas | Isi |
+| File | Contents |
 |---|---|
-| `patches/widescreen.patch` | Diff lengkap terhadap upstream (635 baris), sumber kewajiban LGPL. |
-| `ENGINE_SHA256` di `build-deb.sh` | Checksum biner yang diizinkan masuk paket. Build gagal kalau tidak cocok. |
+| `patches/widescreen.patch` | Full diff against upstream (635 lines), the source of our LGPL obligation. |
+| `ENGINE_SHA256` in `build-deb.sh` | Checksum of the binary allowed into the package. The build fails on mismatch. |
 
-**Aturan yang dipegang:** kalau patch berubah, checksum **wajib** diperbarui di
-commit yang sama. Ini mencegah biner tak dikenal masuk paket tanpa jejak.
+**The rule we hold to:** if the patch changes, the checksum **must** be updated
+in the same commit. This prevents an unknown binary from entering the package
+without a trace.
 
-### Apa yang diubah patch
+> **Note on how the official release is built.** `build-deb.sh` points at the
+> **unmodified upstream release** (`0.2.7`), not at a locally patched binary.
+> The widescreen behaviour the patch describes is applied at runtime through
+> `registry.regemu` and the `PVZ_WIDESCREEN` environment variable, so the
+> shipped engine stays byte-identical to what upstream publishes and anyone can
+> verify it with `curl | sha256sum`. See `docs/BUILDING.md` §3.7.
 
-1. `GLInterface.cpp` — cabang *stretch* di `UpdateViewport()` saat
-   `gWideScreenStretch` aktif (viewport jadi `0,0,1366,768` alih-alih
+### What the patch changes
+
+1. `GLInterface.cpp` — *stretch* branch in `UpdateViewport()` when
+   `gWideScreenStretch` is active (viewport becomes `0,0,1366,768` instead of
    `171,0,1024,768`).
-2. `SexyAppBase.cpp` — baca `PVZ_WIDESCREEN` + key registry, default **aktif**.
-3. `NewOptionsDialog.cpp/.h` — baris "Fill Screen (16:9)", panel Tentang,
-   tombol donasi (`SDL_OpenURL`).
-4. `Window.cpp` — sinkronisasi `mIsWindowed` dengan flag SDL sebenarnya.
-5. `LawnApp.cpp` — `SwitchScreenMode(..., true)` agar perubahan mode tidak
-   diabaikan.
+2. `SexyAppBase.cpp` — reads `PVZ_WIDESCREEN` + registry key, default **on**.
+3. `NewOptionsDialog.cpp/.h` — the "Fill Screen (16:9)" row, the About panel,
+   and the donation buttons (`SDL_OpenURL`).
+4. `Window.cpp` — syncs `mIsWindowed` with the actual SDL flag.
+5. `LawnApp.cpp` — `SwitchScreenMode(..., true)` so mode changes are not ignored.
 
 ---
 
-## 6. Alur render (kenapa widescreen bekerja)
+## 6. Render flow (why widescreen works)
 
 ```
 LawnApp::Init
-  mWidth = gLogicalWidth   (800 normal, 1067 saat stretch)
+  mWidth = gLogicalWidth   (800 normally, 1067 when stretched)
        │
        ▼
 GLInterface::Init
   mWidth = mApp->mWidth
-  glUniformMatrix4fv(ortho 0..mWidth)     ← ruang gambar horizontal melebar
+  glUniformMatrix4fv(ortho 0..mWidth)     ← horizontal drawing space widens
        │
        ▼
-GLInterface::UpdateViewport()   ← TITIK PATCH
-  mode normal : viewport 171,0,1024,768   (pillarbox 4:3)
-  mode stretch: viewport 0,0,1366,768     (isi penuh 16:9)
+GLInterface::UpdateViewport()   ← PATCH POINT
+  normal mode : viewport 171,0,1024,768   (4:3 pillarbox)
+  stretch mode: viewport 0,0,1366,768     (full 16:9 fill)
        │
        ▼
-glViewport(...) setiap frame
+glViewport(...) every frame
 ```
 
-Gameplay tetap **5 lajur**. Yang berubah hanya pemetaan koordinat ke layar;
-logika grid, tabrakan, dan jumlah lajur tidak disentuh.
+Gameplay stays at **5 lanes**. Only the mapping of coordinates to the screen
+changes; grid logic, collisions, and lane count are untouched.
 
-**Batas yang harus diketahui:** aset reanimasi berkanvas tetap 800×600. Karena
-itu tidak mungkin menambah lajur tanpa mengganti aset — pendekatan itu sudah
-dicoba dan ditolak.
+**A limitation you should know:** reanimation assets have a fixed 800×600
+canvas. Adding lanes is therefore impossible without replacing assets — that
+approach was tried and rejected.
 
 ---
 
-## 7. Alur GUI
+## 7. GUI flow
 
 ```
 pvz-native --settings
-  └─ cek GTK_PYTHON (/usr/bin/python3, bukan python pyenv/venv)
+  └─ check GTK_PYTHON (/usr/bin/python3, not a pyenv/venv one)
      └─ python3 -m pvznative settings
-        ├─ baca state: read_wide(), display.screen_mode()
-        ├─ tampilkan 2 checkbox + 4 tombol
-        └─ aksi:
-            Simpan           → display.set_screen_mode(), write_wide()
-            Simpan & Mainkan → apply_now() → Popen(launcher, start_new_session)
-            Tentang          → about.run(parent)
+        ├─ read state: read_wide(), display.screen_mode()
+        ├─ show 2 checkboxes + 4 buttons
+        └─ actions:
+            Save             → display.set_screen_mode(), write_wide()
+            Save & Play      → apply_now() → Popen(launcher, start_new_session)
+            About            → about.run(parent)
+            (Close)          → exit without applying
 ```
 
-**Kenapa interpreter GTK dicari terpisah:** `python3-gi` hanya terpasang untuk
-`/usr/bin/python3`. Kalau pengguna punya pyenv/conda/venv aktif, `python3` bisa
-menunjuk ke sana dan `import gi` gagal. Launcher memeriksa beberapa kandidat dan
-memilih yang benar-benar punya `gi`.
+**Why the GTK interpreter is looked up separately:** `python3-gi` is only
+installed for `/usr/bin/python3`. If the user has pyenv/conda/venv active,
+`python3` may point there and `import gi` fails. The launcher checks several
+candidates and picks the one that actually has `gi`.
 
 ---
 
-## 8. Pengujian
+## 8. Testing
 
-| Jenis | Perintah | Cakupan |
+| Kind | Command | Coverage |
 |---|---|---|
-| Unit test | `python3 -m unittest discover -s tests -t tests` | 68 test: parser, ekstraksi CAB, registry, preferensi, dialog Tentang |
-| Shell syntax | `sh -n scripts/pvz-native && bash -n build-deb.sh` | sintaks |
-| Build | `./build-deb.sh` | paket terbentuk + checksum cocok |
-| Integritas | `dpkg-deb -c release/*.deb` | memastikan **tidak ada** aset game terpaket |
+| Unit tests | `python3 -m unittest discover -s tests -t tests` | 68 tests: parser, CAB extraction, registry, preferences, About dialog |
+| Shell syntax | `sh -n scripts/pvz-native && bash -n build-deb.sh` | syntax |
+| Build | `./build-deb.sh` | package produced + checksum matches |
+| Integrity | `dpkg-deb -c release/*.deb` | ensures **no** game assets are packaged |
 
-Test sengaja memakai **ISO/CAB sintetis** yang dibuat di dalam test, bukan aset
-game asli. Jadi suite bisa dijalankan di CI publik tanpa melanggar hak cipta.
+Tests deliberately use **synthetic ISO/CAB** files created inside the test, not
+real game assets. That is why the suite can run on public CI without infringing
+copyright.
 
 ---
 
-## 9. Keputusan desain yang sudah final
+## 9. Final design decisions
 
-Dicatat supaya tidak diusulkan ulang:
+Recorded so they are not proposed again:
 
-| Keputusan | Alasan |
+| Decision | Reason |
 |---|---|
-| **Tanpa Wine/Proton** | Ini port native; Wine ditolak sejak awal. |
-| **Aset tidak pernah dibundel** | Kewajiban legal; paket tanpa aset = distribusi aman. |
-| **Stretch, bukan tambah lajur** | Aset reanimasi terkunci 800×600. Menambah lajur mustahil tanpa mengganti aset. |
-| **Launcher POSIX sh** | Harus tetap jalan saat Python bermasalah. |
-| **50 lajur? tidak.** | Gameplay tetap 5 lajur sesuai desain asli. |
-| **Biner engine dipin checksum** | Mencegah biner tak dikenal masuk rilis. |
-| **Runtime hooking ditolak** | Engine statis, 0 simbol GL/SDL undefined — secara teknis mustahil. |
+| **No Wine/Proton** | This is a native port; Wine was rejected from the start. |
+| **Assets are never bundled** | Legal obligation; a package without assets is safe to distribute. |
+| **Stretch, not extra lanes** | Reanimation assets are locked to 800×600. Extra lanes are impossible without replacing assets. |
+| **POSIX sh launcher** | Must keep working when Python is broken. |
+| **50 lanes? No.** | Gameplay stays at 5 lanes, per the original design. |
+| **Engine binary pinned by checksum** | Prevents an unknown binary from entering a release. |
+| **Runtime hooking rejected** | The engine is static with 0 undefined GL/SDL symbols — technically impossible. |

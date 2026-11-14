@@ -1,118 +1,121 @@
-# Kebijakan Keamanan
+# Security Policy
 
-## Versi yang didukung
+> **Bahasa Indonesia**: lihat [SECURITY.id.md](SECURITY.id.md)
 
-| Versi | Didukung |
+## Supported versions
+
+| Version | Supported |
 |---|---|
-| 0.5.x (terbaru) | ✅ ya |
-| 0.4.x | ⚠️ hanya perbaikan keamanan kritis |
-| ≤ 0.3.x | ❌ tidak |
+| 0.5.x (latest) | ✅ yes |
+| 0.4.x | ⚠️ critical security fixes only |
+| ≤ 0.3.x | ❌ no |
 
-Selalu gunakan rilis terbaru dari
+Always use the latest release from
 [GitHub Releases](https://github.com/Katon17/pvz-native-linux/releases).
 
 ---
 
-## Melaporkan kerentanan
+## Reporting a vulnerability
 
-**Jangan buka issue publik untuk masalah keamanan.**
+**Do not open a public issue for a security problem.**
 
-Gunakan salah satu jalur privat:
+Use one of these private channels:
 
-1. **GitHub Security Advisory** (disarankan):
+1. **GitHub Security Advisory** (preferred):
    <https://github.com/Katon17/pvz-native-linux/security/advisories/new>
-2. Email: **cimong2356@gmail.com** dengan subjek `[SECURITY] pvz-native`.
+2. Email: **cimong2356@gmail.com** with the subject `[SECURITY] pvz-native`.
 
-Sertakan bila memungkinkan:
+Include, where possible:
 
-- versi paket (`pvz-native --version` atau `dpkg -l pvz-native`)
-- distro & versi kernel (`uname -a`)
-- langkah reproduksi
-- dampak yang kamu perkirakan
-- ada/tidaknya bukti konsep (jangan sertakan exploit siap pakai)
+- package version (`pvz-native --version` or `dpkg -l pvz-native`)
+- distro & kernel version (`uname -a`)
+- reproduction steps
+- the impact you expect
+- whether you have a proof of concept (do not attach a ready-to-use exploit)
 
-**Waktu respons yang kami usahakan:**
+**Response times we aim for:**
 
-| Tahap | Target |
+| Stage | Target |
 |---|---|
-| Konfirmasi penerimaan | 3 hari kerja |
-| Penilaian awal | 7 hari kerja |
-| Perbaikan / mitigasi | 30 hari (bergantung tingkat keparahan) |
-| Pengungkapan publik | setelah perbaikan dirilis, atas kesepakatan |
+| Acknowledgement | 3 business days |
+| Initial assessment | 7 business days |
+| Fix / mitigation | 30 days (depending on severity) |
+| Public disclosure | after the fix ships, by agreement |
 
-Kami akan mencantumkan namamu di kredit rilis bila kamu mengizinkan.
+We will credit you in the release notes if you allow it.
 
 ---
 
-## Cakupan
+## Scope
 
-### Termasuk dalam cakupan
+### In scope
 
-| Area | Contoh masalah |
+| Area | Example issues |
 |---|---|
-| **Ekstraksi arsip** | Path traversal (`../`) pada ISO/ZIP/CAB, symlink escape, zip bomb yang membuat memori habis |
-| **Penanganan installer `.exe`** | Pencarian payload CAB yang salah batas sehingga menulis di luar folder tujuan |
-| **Izin berkas** | Berkas aset/save dibuat dengan mode terlalu terbuka (world-writable) |
-| **Injeksi argumen** | Nama berkai/tanpa escape yang membuat argumen terpisah saat memanggil `cabextract`, `xdg-open`, atau engine |
-| **Skrip launcher** | Path dengan spasi, newline, atau karakter shell yang tidak di-quote |
-| **Registry parser** | Pembacaan `registry.regemu` yang rusak sehingga buffer overflow / crash |
-| **Provenance biner** | Biner engine yang lolos verifikasi `ENGINE_SHA256` padahal berbeda |
-| **Kebocoran data** | Apa pun yang mengirim berkas pengguna ke jaringan (seharusnya **tidak ada**) |
+| **Archive extraction** | Path traversal (`../`) in ISO/ZIP/CAB, symlink escape, zip bomb exhausting memory |
+| **`.exe` installer handling** | CAB payload scanning with wrong bounds, writing outside the target folder |
+| **File permissions** | Assets/saves created with overly permissive modes (world-writable) |
+| **Argument injection** | Unescaped names producing separate arguments when calling `cabextract`, `xdg-open`, or the engine |
+| **Launcher script** | Paths with spaces, newlines, or shell characters that are not quoted |
+| **Registry parser** | Reading a corrupt `registry.regemu` causing a buffer overflow / crash |
+| **Binary provenance** | An engine binary passing `ENGINE_SHA256` verification while being different |
+| **Data leakage** | Anything that sends user files over the network (there should be **none**) |
 
-### Di luar cakupan
+### Out of scope
 
-- Kerentanan di **engine PvZ-Portable** → laporkan ke
+- Vulnerabilities in the **PvZ-Portable engine** → report to
   [upstream](https://github.com/wszqkzqk/PvZ-Portable).
-- Kerentanan di **SDL3 / SDL3_mixer / libopenmpt** → laporkan ke proyek masing-masing.
-- Masalah yang butuh akses fisik ke mesin.
-- Serangan yang mensyaratkan penyerang sudah punya hak root.
-- Bug tampilan, suara, atau performa (gunakan issue biasa).
-- Laporan otomatis dari pemindai tanpa bukti dampak nyata.
+- Vulnerabilities in **SDL3 / SDL3_mixer / libopenmpt** → report to the
+  respective projects.
+- Issues requiring physical access to the machine.
+- Attacks that require the attacker to already have root.
+- Display, audio, or performance bugs (use a regular issue).
+- Automated scanner output without evidence of real impact.
 
 ---
 
-## Prinsip keamanan proyek ini
+## Security principles of this project
 
-Beberapa hal yang sengaja dirancang begitu:
+A few things are deliberately designed this way:
 
-1. **Tidak ada jaringan saat bermain.** Launcher tidak mengunggah apa pun.
-   Satu-satunya koneksi keluar adalah saat kamu sendiri membuka tautan donasi.
-2. **Tidak ada eksekusi dari arsip.** Wizard hanya menyalin `main.pak` dan
-   `properties/`; tidak pernah menjalankan berkas dari dalam ISO.
-3. **Biner engine dipin checksum.** Build gagal bila biner tidak cocok dengan
-   `ENGINE_SHA256` di `build-deb.sh`.
-4. **Tanpa `sudo` saat bermain.** Semua data pengguna ditulis di direktori
-   `$XDG_DATA_HOME` milik pengguna sendiri.
-5. **Tanpa downloader aset.** Proyek ini tidak punya fitur "unduh game";
-   aset harus kamu sediakan sendiri.
+1. **No network access while playing.** The launcher uploads nothing. The only
+   outbound connection is when you yourself open a donation link.
+2. **No execution from archives.** The wizard only copies `main.pak` and
+   `properties/`; it never runs a file from inside an ISO.
+3. **Engine binary pinned by checksum.** The build fails if the binary does not
+   match `ENGINE_SHA256` in `build-deb.sh`.
+4. **No `sudo` while playing.** All user data is written under the user's own
+   `$XDG_DATA_HOME` directory.
+5. **No asset downloader.** This project has no "download the game" feature; you
+   must supply the assets yourself.
 
 ---
 
-## Verifikasi paket rilis
+## Verifying a release package
 
-Sebelum memasang, selalu periksa checksum:
+Always check the checksum before installing:
 
 ```bash
 cd ~/Downloads
 sha256sum -c pvz-native_0.5.2_amd64.deb.sha256
-# harus: pvz-native_0.5.2_amd64.deb: OK
+# must print: pvz-native_0.5.2_amd64.deb: OK
 ```
 
-Periksa juga isi paket — **tidak boleh** ada aset game:
+Also check the package contents — there must be **no game assets**:
 
 ```bash
 dpkg-deb -c pvz-native_0.5.2_amd64.deb \
   | grep -iE 'main\.pak|LawnStrings|properties/' \
-  && echo "MENCURIGAKAN" || echo "OK: bersih"
+  && echo "SUSPICIOUS" || echo "OK: clean"
 ```
 
-Periksa biner engine-nya:
+Check the engine binary itself:
 
 ```bash
 rm -rf /tmp/v && mkdir /tmp/v
 dpkg-deb -x pvz-native_0.5.2_amd64.deb /tmp/v
 sha256sum /tmp/v/usr/lib/pvz-native/engine/pvz-portable
-# bandingkan dengan ENGINE_SHA256 di build-deb.sh pada tag yang sama
+# compare against ENGINE_SHA256 in build-deb.sh at the same tag
 ```
 
-Kalau checksum tidak cocok, **jangan pasang** dan laporkan.
+If a checksum does not match, **do not install** and report it.

@@ -42,17 +42,19 @@ game as a **normal native Linux program** — no Wine, no emulator, no Proton.
 
 ## Documentation
 
-| Dokumen | Isi |
+Every document is available in **English** and **Indonesian**. Files without an
+`.id` suffix are the English version (the default on GitHub).
+
+| Document | Contents |
 |---|---|
-| [docs/SPECIFICATIONS.md](docs/SPECIFICATIONS.md) | **Spec minimum & rekomendasi** — CPU, RAM, GPU, disk, driver |
-| [docs/BUILDING.md](docs/BUILDING.md) | Membangun engine & paket dari nol |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Alur data, patch engine, keputusan desain |
-| [docs/PROTECTION.md](docs/PROTECTION.md) | **Lisensi, hak cipta, dan aturan penggunaan karya** |
-| [PUSH-GITHUB.md](PUSH-GITHUB.md) | Panduan push repo lewat terminal |
-| [SECURITY.md](SECURITY.md) | Melaporkan kerentanan |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Aturan kontribusi & gaya commit |
-| [CHANGELOG.md](CHANGELOG.md) | Riwayat perubahan |
-| [NOTICE](NOTICE) | Pernyataan legal lengkap |
+| [docs/SPECIFICATIONS.md](docs/SPECIFICATIONS.md) · [🇮🇩](docs/SPECIFICATIONS.id.md) | **Minimum & recommended specs** — CPU, RAM, GPU, disk, drivers |
+| [docs/BUILDING.md](docs/BUILDING.md) · [🇮🇩](docs/BUILDING.id.md) | Building the engine & package from scratch |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [🇮🇩](docs/ARCHITECTURE.id.md) | Data flow, engine patch, design decisions |
+| [docs/PROTECTION.md](docs/PROTECTION.md) · [🇮🇩](docs/PROTECTION.id.md) | **License, copyright, and rules for using this work** |
+| [SECURITY.md](SECURITY.md) · [🇮🇩](SECURITY.id.md) | Reporting vulnerabilities |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution rules & commit style |
+| [CHANGELOG.md](CHANGELOG.md) | Change history |
+| [NOTICE](NOTICE) | Full legal statement |
 
 ## Why this exists
 

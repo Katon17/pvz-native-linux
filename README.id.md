@@ -1,9 +1,23 @@
+<!--
+  ┌───────────────────────────────────────────────────────────────────────┐
+  │  pvz-native-linux — Copyright (C) 2026 Katon Bagaskoro                │
+  │  Licensed under GNU GPL-3.0-or-later. See LICENSE.                    │
+  │  Do NOT remove this notice. Do not re-upload under a different name.  │
+  └───────────────────────────────────────────────────────────────────────┘
+-->
+
 # Plants vs. Zombies — Native Linux (`.deb`)
 
 🇬🇧 **English**: see [README.md](README.md)
 
-[![Release](https://img.shields.io/badge/rilis-v0.1.0-blue.svg)](https://github.com/Katon17/pvz-native-linux/releases)
-[![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-orange.svg)](#kebutuhan-sistem)
+[![build](https://github.com/Katon17/pvz-native-linux/actions/workflows/build.yml/badge.svg)](https://github.com/Katon17/pvz-native-linux/actions/workflows/build.yml)
+[![attribution](https://github.com/Katon17/pvz-native-linux/actions/workflows/attribution.yml/badge.svg)](https://github.com/Katon17/pvz-native-linux/actions/workflows/attribution.yml)
+[![Lisensi: GPL v3](https://img.shields.io/badge/Lisensi-GPLv3-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-x86__64%20Linux-informational)](docs/SPECIFICATIONS.id.md)
+
+[![Rilis](https://img.shields.io/badge/rilis-v0.5.2-blue.svg)](https://github.com/Katon17/pvz-native-linux/releases)
+[![Format](https://img.shields.io/badge/format-.deb%20%7C%20tar.gz-873cf3e.svg)](#instalasi)
+[![Engine](https://img.shields.io/badge/engine-PvZ--Portable%200.2.7-green.svg)](https://github.com/wszqkzqk/PvZ-Portable)
 [![Aset](https://img.shields.io/badge/aset-tidak%20disertakan-critical.svg)](#legal)
 
 Launcher dan pengelola aset untuk **Plants vs. Zombies: Game of the Year**
@@ -15,6 +29,22 @@ Launcher akan mengekstrak asetnya, memasang entry menu dengan ikon yang benar,
 lalu menjalankan game sebagai program Linux biasa.
 
 ---
+
+## Dokumentasi
+
+Setiap dokumen tersedia dalam **English** dan **Indonesia**. Berkas tanpa akhiran
+`.id` adalah versi Inggris (default di GitHub).
+
+| Dokumen | Isi |
+|---|---|
+| [docs/SPECIFICATIONS.md](docs/SPECIFICATIONS.md) · [🇮🇩](docs/SPECIFICATIONS.id.md) | **Spec minimum & rekomendasi** — CPU, RAM, GPU, disk, driver |
+| [docs/BUILDING.md](docs/BUILDING.md) · [🇮🇩](docs/BUILDING.id.md) | Membangun engine & paket dari nol |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [🇮🇩](docs/ARCHITECTURE.id.md) | Alur data, patch engine, keputusan desain |
+| [docs/PROTECTION.md](docs/PROTECTION.md) · [🇮🇩](docs/PROTECTION.id.md) | **Lisensi, hak cipta, dan aturan penggunaan karya** |
+| [SECURITY.md](SECURITY.md) · [🇮🇩](SECURITY.id.md) | Melaporkan kerentanan |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Aturan kontribusi & gaya commit |
+| [CHANGELOG.md](CHANGELOG.md) | Riwayat perubahan |
+| [NOTICE](NOTICE) | Pernyataan legal lengkap |
 
 ## Kenapa proyek ini ada
 

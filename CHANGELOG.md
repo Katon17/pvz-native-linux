@@ -14,6 +14,59 @@ versi mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 
 ## [0.5.2] — 2026-11-14
 
+### Ditambahkan — dokumentasi dua bahasa (English / Indonesia)
+Dilaporkan: "repo nya masih di dominasi bahasa indonesia di .md".
+
+**English kini jadi default** karena itu yang dibaca pengunjung asing di GitHub;
+Bahasa Indonesia tetap tersedia penuh sebagai berkas `.id.md` di sebelahnya.
+
+| Dokumen | English | Indonesia |
+|---|---|---|
+| Spesifikasi | `docs/SPECIFICATIONS.md` | `docs/SPECIFICATIONS.id.md` |
+| Membangun | `docs/BUILDING.md` | `docs/BUILDING.id.md` |
+| Arsitektur | `docs/ARCHITECTURE.md` | `docs/ARCHITECTURE.id.md` |
+| Perlindungan karya | `docs/PROTECTION.md` | `docs/PROTECTION.id.md` |
+| Kebijakan keamanan | `SECURITY.md` | `SECURITY.id.md` |
+| Kontribusi | `CONTRIBUTING.md` | `CONTRIBUTING.id.md` |
+| README | `README.md` | `README.id.md` |
+
+- Setiap dokumen punya baris pemilih bahasa di bagian atasnya, jadi pembaca
+  bisa berpindah tanpa kembali ke README.
+- `README.md` dan `README.id.md` sama-sama memuat tabel **Documentation** dengan
+  tautan ke kedua bahasa.
+- `README.id.md` disegarkan: badge `v0.1.0` yang usang diganti badge build,
+  attribution, lisensi, platform, dan rilis `v0.5.2`; banner hak cipta
+  ditambahkan.
+- Konten teknis kedua bahasa dijaga identik — termasuk peringatan "jangan
+  percaya klaim 100+ FPS", batasan 5 lajur, dan tabel angka pemakaian nyata.
+- Pemeriksaan tautan silang: 0 tautan rusak di seluruh berkas Markdown.
+
+### Diperbaiki — engine dirujuk ke rilis upstream yang benar
+Dilaporkan: CI `package` gagal di GitHub Actions dengan `checksum engine tidak
+cocok` (HTTP 404 pada URL unduhan).
+
+**Akar masalah.** `build-deb.sh` menunjuk `ENGINE_VERSION="0.2.7-widescreen"`,
+tag yang **tidak pernah ada** di repo upstream. Checksum `77f98a45…` adalah milik
+biner hasil build lokal, sehingga setiap mesin yang tidak punya biner itu
+(termasuk runner CI) akan gagal mengunduh.
+
+**Perbaikan.**
+- `ENGINE_URL` kini menunjuk rilis resmi `0.2.7` + aset
+  `pvz-portable-linux-static-x86_64`.
+- `ENGINE_SHA256` = `add5bc1b68d6c2a7deba6e8195a1c55c342d6d5ef4bf13af99751b8ed65aa8d9`,
+  hasil verifikasi langsung atas artefak upstream (12.083.040 byte).
+- Widescreen tetap berfungsi tanpa menambal biner: launcher menulis setelan ke
+  `registry.regemu` sebelum engine dijalankan. Ini membuat checksum bisa
+  diaudit publik — siapa pun bisa `curl | sha256sum` dan mencocokkannya.
+- Pesan galat checksum sekarang menyebutkan URL, tiga kemungkinan penyebab, dan
+  cara memakai engine hasil build sendiri (`--engine`).
+- `docs/BUILDING.md` §3.7 dipecah: jalur A (artefak upstream, dipakai rilis
+  resmi) dan jalur B (build sendiri).
+- `NOTICE` §5 memuat pernyataan hak cipta eksplisit
+  `(C) 2026 Katon Bagaskoro <cimong2356@gmail.com>`.
+- CI `attribution` menerima nama, email, atau username sebagai bukti atribusi
+  (sebelumnya hanya nama).
+
 ### Dokumentasi & perlindungan karya
 - **docs/SPECIFICATIONS.md** — spec minimum lengkap: CPU, RAM, GPU per model,
   disk, layar, OS, sesi desktop, cara verifikasi driver, angka pemakaian nyata,

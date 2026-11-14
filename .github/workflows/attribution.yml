@@ -36,7 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f NOTICE || { echo "::error::NOTICE hilang"; exit 1; }
-          grep -qi "Katon Bagaskoro" NOTICE \
+          grep -qiE "Katon Bagaskoro|cimong2356@gmail\.com|Katon17" NOTICE \
             || { echo "::error::nama penulis hilang dari NOTICE"; exit 1; }
           echo "OK: NOTICE menyebut penulis"
 
@@ -85,6 +85,83 @@ jobs:
             exit 1
           fi
           echo "OK: tidak ada kredensial"
+
+  docs-bilingual:
+    name: Dokumentasi dua bahasa tetap sinkron
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setiap dokumen wajib punya pasangan .id.md
+        run: |
+          set -euo pipefail
+          gagal=0
+          for f in README.md SECURITY.md CONTRIBUTING.md \
+                   docs/SPECIFICATIONS.md docs/BUILDING.md \
+                   docs/ARCHITECTURE.md docs/PROTECTION.md; do
+            id="${f%.md}.id.md"
+            if [ ! -f "$id" ]; then
+              echo "::error file=$f::terjemahan hilang: $id"
+              gagal=1
+            fi
+          done
+          exit $gagal
+
+      - name: Setiap pasangan wajib punya baris pemilih bahasa
+        run: |
+          set -euo pipefail
+          gagal=0
+          for f in README.md SECURITY.md CONTRIBUTING.md \
+                   docs/SPECIFICATIONS.md docs/BUILDING.md \
+                   docs/ARCHITECTURE.md docs/PROTECTION.md; do
+            id="${f%.md}.id.md"
+            # versi Inggris harus menautkan ke .id.md
+            if ! grep -q "($(basename "$id"))" "$f" 2>/dev/null; then
+              echo "::error file=$f::tidak menautkan ke $(basename "$id")"
+              gagal=1
+            fi
+            # versi Indonesia harus menautkan balik ke versi Inggris
+            if ! grep -q "($(basename "$f"))" "$id" 2>/dev/null; then
+              echo "::error file=$id::tidak menautkan ke $(basename "$f")"
+              gagal=1
+            fi
+          done
+          exit $gagal
+
+      - name: Tidak boleh ada terjemahan yatim
+        run: |
+          set -euo pipefail
+          gagal=0
+          for id in $(find . -name '*.id.md' -not -path './.git/*'); do
+            en="${id%.id.md}.md"
+            if [ ! -f "$en" ]; then
+              echo "::error file=$id::versi Inggris tidak ada: $en"
+              gagal=1
+            fi
+          done
+          exit $gagal
+
+      - name: Tidak boleh ada tautan markdown rusak
+        run: |
+          set -euo pipefail
+          python3 - <<'EOF'
+          import pathlib, re, sys
+          root = pathlib.Path('.')
+          files = list(root.glob('*.md')) + list(root.glob('docs/*.md'))
+          bad = []
+          for f in files:
+              for m in re.finditer(r']\(([^)#][^)]*)\)', f.read_text(encoding='utf-8')):
+                  t = m.group(1)
+                  if t.startswith(('http://', 'https://', 'mailto:')):
+                      continue
+                  t = t.split('#')[0]
+                  if t and not (f.parent / t).resolve().exists():
+                      bad.append(f"{f} -> {t}")
+          for b in bad:
+              print(f"::error::tautan rusak: {b}")
+          sys.exit(1 if bad else 0)
+          EOF
+          echo "OK: semua tautan internal valid"
 
   provenance:
     name: Catat provenance biner engine

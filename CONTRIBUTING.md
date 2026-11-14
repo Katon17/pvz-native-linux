@@ -1,26 +1,29 @@
 # Contributing
 
-Terima kasih sudah mau ikut. Dua hal penting sebelum mulai:
+> **Bahasa Indonesia**: lihat [CONTRIBUTING.id.md](CONTRIBUTING.id.md)
 
-1. **Jangan pernah meng-attach aset game** (atau turunannya) ke issue, PR,
-   atau komentar — termasuk screenshot `main.pak`, isi `properties/`, dan
-   tautan unduhan. PR yang berisi aset akan ditutup tanpa diskusi.
-2. **Jangan mengusulkan cara mendapatkan game secara ilegal.** Proyek ini
-   hanya membantu orang yang sudah punya game-nya.
+Thanks for wanting to help. Two important things before you start:
 
-## Lingkup proyek
+1. **Never attach game assets** (or derivatives) to issues, PRs, or comments —
+   including screenshots of `main.pak`, the contents of `properties/`, and
+   download links. PRs containing assets will be closed without discussion.
+2. **Do not propose ways to obtain the game illegally.** This project only helps
+   people who already own the game.
 
-| Bagian | Di sini? |
+## Project scope
+
+| Area | In scope? |
 |---|---|
-| Launcher, wizard, ekstraksi aset | ✅ ya |
-| Packaging (.deb, AppImage, Flatpak) | ✅ ya |
-| Dokumentasi & troubleshooting | ✅ ya |
-| Bug rendering/audio/gameplay di engine | ❌ laporkan ke [PvZ-Portable](https://github.com/wszqkzqk/PvZ-Portable) |
+| Launcher, wizard, asset extraction | ✅ yes |
+| Packaging (.deb, AppImage, Flatpak) | ✅ yes |
+| Documentation & troubleshooting | ✅ yes |
+| Rendering/audio/gameplay bugs in the engine | ❌ report to [PvZ-Portable](https://github.com/wszqkzqk/PvZ-Portable) |
 
-Kalau kamu menemukan bug yang ternyata ada di engine, tetap boleh buka issue
-di sini agar bisa dikonfirmasi sebagai masalah launcher — nanti kita arahkan.
+If you find a bug that turns out to live in the engine, you may still open an
+issue here so we can confirm it is not a launcher problem — we will point you in
+the right direction.
 
-## Setup development
+## Development setup
 
 ```bash
 git clone https://github.com/Katon17/pvz-native-linux
@@ -33,42 +36,41 @@ python3 -m pvznative doctor
 python3 -m unittest discover -s tests -t tests -v
 ```
 
-Butuh Python 3.9+. Untuk build engine: `./build-deb.sh --fetch-engine`.
+Requires Python 3.9+. To get the engine: `./build-deb.sh --fetch-engine`.
 
-## Sebelum mengirim PR
+## Before sending a PR
 
-- [ ] `python3 -m unittest discover -s tests -t tests` hijau semua.
-- [ ] `sh -n scripts/pvz-native` dan `bash -n build-deb.sh` tanpa error.
-- [ ] Perubahan perilaku ditambahkan ke `CHANGELOG.md` bagian `[Unreleased]`.
-- [ ] Tidak ada path absolut, kredensial, atau aset game di diff.
-- [ ] Kalau menyentuh ekstraksi aset: tambahkan test yang membuat ISO/ZIP
-      sintetis (lihat `tests/make_test_iso.py`).
+- [ ] `python3 -m unittest discover -s tests -t tests` is green.
+- [ ] `sh -n scripts/pvz-native` and `bash -n build-deb.sh` produce no errors.
+- [ ] Behaviour changes are added to `CHANGELOG.md` under `[Unreleased]`.
+- [ ] No absolute paths, credentials, or game assets in the diff.
+- [ ] If you touch asset extraction: add a test that builds a synthetic ISO/ZIP
+      (see `tests/make_test_iso.py`).
 
-## Gaya kode
+## Code style
 
 **Python**
-- Type hints di semua signature publik.
-- `pathlib` untuk semua path, jangan string concat.
-- Pesan error untuk user ditulis dalam Bahasa Indonesia dan harus menjawab
-  "lalu aku harus apa?" — bukan sekadar menyebut apa yang gagal.
-- Jangan menambah dependency eksternal. Proyek ini sengaja hanya memakai
-  standard library agar instalasi tetap ringan.
+- Type hints on all public signatures.
+- `pathlib` for every path, never string concatenation.
+- User-facing error messages are written in Bahasa Indonesia and must answer
+  "so what do I do now?" — not merely state what failed.
+- Do not add external dependencies. This project deliberately uses only the
+  standard library so installation stays lightweight.
 
 **Shell**
 - `#!/bin/sh` + `set -eu`, POSIX-compatible.
-- Semua variabel diberi kutip: `"$VAR"`.
-- Perhatikan `shellcheck` (`SC2086` disengaja pada `$PASSTHROUGH`, diberi
-  komentar).
+- Quote every variable: `"$VAR"`.
+- Watch `shellcheck` (`SC2086` is intentional on `$PASSTHROUGH` and commented).
 
-## Menambah dukungan distro
+## Adding distro support
 
-Untuk distro berbasis Debian, ubah `packaging/debian/`. Untuk distro lain,
-prioritasnya adalah **AppImage** (satu file, jalan di mana-mana) sebelum
-memecah ke format paket per-distro.
+For Debian-based distros, edit `packaging/debian/`. For other distros, the
+priority is **AppImage** (one file, runs anywhere) before splitting into
+per-distro package formats.
 
-## Melaporkan bug
+## Reporting bugs
 
-Sertakan output ini — sebagian besar laporan bisa diselesaikan dari sini:
+Include this output — most reports can be resolved from it:
 
 ```bash
 pvz-native --doctor
@@ -76,69 +78,69 @@ pvz-native --verify
 cat ~/.local/share/pvz-native/logs/*.log
 ```
 
-Jangan menyertakan `main.pak` atau isi `properties/`. Nama file, ukuran, dan
-checksum `main.pak` sudah cukup dan tidak melanggar hak cipta.
+Do not include `main.pak` or the contents of `properties/`. The file name, size,
+and checksum of `main.pak` are enough and do not infringe copyright.
 
-## Lisensi kontribusi
+## Contribution license
 
-Dengan mengirim pull request, kamu menyatakan bahwa:
+By submitting a pull request you state that:
 
-1. Karyamu **asli** atau kamu punya hak untuk menyumbangkannya;
-2. Kamu setuju karyamu dilisensikan di bawah **GPL-3.0-or-later**, sama seperti
-   proyek ini;
-3. Kamu **tidak** keberatan namamu dicantumkan di riwayat commit dan daftar
-   kontributor.
+1. Your work is **original**, or you have the right to contribute it;
+2. You agree to license your work under **GPL-3.0-or-later**, the same as this
+   project;
+3. You have **no objection** to your name appearing in the commit history and
+   the contributor list.
 
-Proyek ini **tidak** meminta penyerahan hak cipta (CLA). Karyamu tetap milikmu;
-kamu hanya memberi izin GPL kepada semua orang, termasuk proyek ini.
+This project does **not** ask for a copyright assignment (CLA). Your work stays
+yours; you simply grant the GPL permissions to everyone, including this project.
 
-### Daftar periksa sebelum kirim PR
-
-```
-[ ] python3 -m unittest discover -s tests -t tests    → semua lulus
-[ ] sh -n scripts/pvz-native && bash -n build-deb.sh  → tanpa galat
-[ ] Tidak ada aset game di diff (main.pak, properties/, gambar/suara game)
-[ ] Tidak ada kredensial, token, atau path pribadi yang ikut
-[ ] CHANGELOG.md diperbarui bila mengubah perilaku
-[ ] Bila mengubah patch engine: ENGINE_SHA256 ikut diperbarui di commit sama
-[ ] Pesan commit mengikuti Conventional Commits (lihat di bawah)
-```
-
-## Gaya commit
+### PR checklist
 
 ```
-<tipo>(<lingkup>): <ringkasan singkat>
-
-Penjelasan opsional: kenapa perubahan ini perlu.
+[ ] python3 -m unittest discover -s tests -t tests    → all pass
+[ ] sh -n scripts/pvz-native && bash -n build-deb.sh  → no errors
+[ ] No game assets in the diff (main.pak, properties/, game images/audio)
+[ ] No credentials, tokens, or private paths included
+[ ] CHANGELOG.md updated if behaviour changed
+[ ] If you change the engine patch: ENGINE_SHA256 updated in the same commit
+[ ] Commit message follows Conventional Commits (see below)
 ```
 
-| Tipo | Untuk |
+## Commit style
+
+```
+<type>(<scope>): <short summary>
+
+Optional explanation: why this change is needed.
+```
+
+| Type | For |
 |---|---|
-| `feat` | fitur baru |
-| `fix` | perbaikan bug |
-| `docs` | dokumentasi saja |
-| `test` | menambah/memperbaiki test |
-| `build` | build, packaging, dependensi |
-| `refactor` | merapikan kode tanpa ubah perilaku |
-| `legal` | lisensi, NOTICE, dokumen hukum |
+| `feat` | new feature |
+| `fix` | bug fix |
+| `docs` | documentation only |
+| `test` | adding/fixing tests |
+| `build` | build, packaging, dependencies |
+| `refactor` | tidying code without behaviour change |
+| `legal` | license, NOTICE, legal documents |
 
-Contoh:
+Example:
 
 ```
-fix(options): hormati centang Full Screen saat dimatikan
+fix(options): respect the Full Screen checkbox when turned off
 
-SwitchScreenMode keluar lebih awal lewat pemeriksaan
-mIsWindowed == wantWindowed sehingga window SDL tidak pernah diubah.
-Dipaksa dengan force=true dan mIsWindowed disinkronkan dari flag SDL.
+SwitchScreenMode returns early via the mIsWindowed == wantWindowed check,
+so the SDL window was never changed. Forced with force=true and
+mIsWindowed is synced from the SDL flag.
 
 Refs: #12
 ```
 
-## Yang akan ditolak
+## What will be rejected
 
-- Kode yang mengambil jalan pintas dengan menyalin kode berlisensi tidak
-  kompatibel (mis. GPL-2.0-only, kode proprietary).
-- Perubahan yang menambah telemetri, analitik, atau koneksi jaringan apa pun
-  tanpa diskusi lebih dulu.
-- "Perbaikan" yang menghapus notis hak cipta atau atribusi.
-- Bundel aset game dalam bentuk apa pun.
+- Code that takes shortcuts by copying license-incompatible code (e.g.
+  GPL-2.0-only, proprietary code).
+- Changes that add telemetry, analytics, or any network connection without
+  prior discussion.
+- "Fixes" that remove copyright notices or attribution.
+- Bundling game assets in any form.

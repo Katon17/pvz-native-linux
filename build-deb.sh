@@ -74,9 +74,18 @@ if [ "$FETCH_ENGINE" -eq 1 ] || [ ! -f "$ENGINE_SRC" ]; then
     if [ "$actual" != "$ENGINE_SHA256" ]; then
         rm -f "$tmp"
         die "checksum engine tidak cocok!
+  URL       : $ENGINE_URL
   diharapkan: $ENGINE_SHA256
   didapat   : $actual
-Jangan lanjutkan sebelum kamu memverifikasi ulang sumber binary ini."
+
+Kemungkinan penyebab:
+  1. Upstream menerbitkan ulang aset dengan nama rilis yang sama.
+     Periksa: https://github.com/wszqkzqk/PvZ-Portable/releases/tag/${ENGINE_VERSION}
+  2. Unduhan terpotong atau dirusak proxy/jaringan.
+  3. Kamu memakai engine hasil build sendiri (patch widescreen).
+
+Kalau (1), perbarui ENGINE_SHA256 di build-deb.sh SETELAH memverifikasi
+manual. Kalau (3), pakai: ./build-deb.sh --engine /path/ke/pvz-portable"
     fi
     install -Dm755 "$tmp" "$ENGINE_SRC"
     rm -f "$tmp"
