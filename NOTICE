@@ -1,0 +1,86 @@
+pvz-native — NOTICE dan pernyataan legal
+=========================================
+English summary at the bottom.
+
+1. PAKET INI TIDAK MENGANDUNG ASET GAME
+---------------------------------------
+Paket pvz-native (termasuk file .deb, tarball, AppImage, dan arsip rilis
+lainnya) TIDAK berisi satu byte pun aset Plants vs. Zombies:
+
+  - tidak ada main.pak
+  - tidak ada folder properties/ atau LawnStrings.txt
+  - tidak ada gambar, suara, musik, font, atau video dari game
+  - tidak ada kode game hasil dekompilasi milik EA/PopCap
+
+Yang dibundel hanyalah:
+  a) launcher dan pengelola aset (lisensi GPL-3.0-or-later), dan
+  b) binary engine PvZ-Portable (lisensi LGPL-3.0-or-later), yaitu
+     reimplementasi open source independen, bukan salinan kode game asli.
+
+2. KEWAJIBAN PENGGUNA
+---------------------
+Untuk menjalankan game, kamu harus menyediakan aset dari salinan
+Plants vs. Zombies yang kamu miliki secara sah, misalnya:
+
+  - Steam: "Plants vs. Zombies: Game of the Year" (app 3590)
+  - EA App / situs resmi EA
+  - CD/DVD original rilis PopCap (disarankan versi 1.2.0.1073)
+
+Launcher hanya menyalin file dari penyimpanan lokalmu ke direktori data
+milikmu sendiri (~/.local/share/pvz-native/). Tidak ada file yang diunggah,
+dikirim, atau dibagikan ke pihak mana pun oleh perangkat lunak ini.
+
+Proyek ini tidak menyediakan, menautkan, atau mendukung sumber unduhan
+ilegal. Permintaan bantuan untuk mendapatkan aset secara tidak sah akan
+ditolak.
+
+3. MEREK DAGANG
+---------------
+"Plants vs. Zombies", "PopCap", dan "Electronic Arts" adalah merek dagang
+atau merek terdaftar milik Electronic Arts Inc. Proyek ini tidak resmi,
+non-komersial, dan TIDAK berafiliasi dengan, disponsori oleh, atau
+didukung oleh Electronic Arts Inc. maupun PopCap Games.
+
+4. STATUS PROYEK
+----------------
+Proyek ini adalah alat kompatibilitas dan pelestarian (preservation) untuk
+pengguna Linux yang sudah memiliki game-nya. Proyek ini tidak mengklaim
+hak apa pun atas karya berhak cipta milik EA.
+
+Engine PvZ-Portable menyatakan dirinya sebagai reimplementasi manual yang
+ditulis ulang dari riset komunitas, bukan hasil reverse engineering biner
+milik EA. Klaim tersebut adalah klaim pihak upstream; lihat
+https://github.com/wszqkzqk/PvZ-Portable untuk detail dan lisensinya.
+
+5. LISENSI KOMPONEN
+-------------------
+  launcher, wizard, packaging   : GPL-3.0-or-later
+  engine PvZ-Portable (bundled) : LGPL-3.0-or-later
+  SDL3, SDL3_mixer              : zlib license
+  libopenmpt                    : BSD-3-Clause
+  libpng, libjpeg-turbo, zlib   : masing-masing lisensi open source
+
+Teks lisensi lengkap ada di:
+  /usr/share/doc/pvz-native/copyright
+  /usr/share/common-licenses/GPL-3
+  /usr/share/common-licenses/LGPL-3
+
+6. TANPA JAMINAN
+----------------
+Perangkat lunak ini disediakan "sebagaimana adanya", tanpa jaminan apa pun,
+termasuk jaminan kelayakan untuk tujuan tertentu. Pengguna menanggung
+seluruh risiko penggunaan.
+
+
+--------------------------------------------------------------------------------
+ENGLISH SUMMARY
+--------------------------------------------------------------------------------
+This package contains NO game assets. You must own Plants vs. Zombies
+(Steam app 3590, EA App, or original PopCap CD) to use it. The launcher only
+copies files from your own storage into your own home directory and never
+uploads anything. The bundled engine is PvZ-Portable, an independent open
+source reimplementation (LGPL-3.0-or-later), not EA code.
+
+Plants vs. Zombies is a trademark of Electronic Arts Inc. This is an
+unofficial, non-commercial project, not affiliated with or endorsed by EA or
+PopCap. Provided without warranty of any kind.

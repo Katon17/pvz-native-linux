@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    remove|purge)
+        if [ -x /usr/bin/update-desktop-database ]; then
+            update-desktop-database -q /usr/share/applications || true
+        fi
+        if [ -x /usr/bin/gtk-update-icon-cache ] && [ -d /usr/share/icons/hicolor ]; then
+            gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+        fi
+        ;;
+esac
+
+# CATATAN PENTING:
+# Save game dan aset hasil ekstraksi milik user ada di
+#   ~/.local/share/pvz-native/
+# dan sengaja TIDAK dihapus saat paket di-uninstall, supaya progres career
+# tidak hilang saat upgrade. Untuk membersihkannya:
+#   pvz-native uninstall
+exit 0

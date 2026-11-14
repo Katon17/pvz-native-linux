@@ -1,0 +1,141 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Unit tests (synthetic ISO/ZIP, no game assets)
+        run: python3 -m unittest discover -s tests -t tests -v
+
+      - name: Shell syntax
+        run: |
+          sh -n scripts/pvz-native
+          bash -n build-deb.sh
+
+      - name: Launcher smoke test (text mode)
+        env:
+          PVZ_NATIVE_NO_GUI: "1"
+          XDG_DATA_HOME: ${{ runner.temp }}/xdg
+        run: |
+          export PYTHONPATH="$PWD/tools"
+          python3 -m pvznative where
+          python3 -m pvznative doctor || true   # kode 2 = ada masalah, bukan crash
+
+  package:
+    name: Build .deb
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install packaging tools
+        run: sudo apt-get update && sudo apt-get install -y dpkg-dev curl cabextract
+
+      - name: Build package
+        run: ./build-deb.sh --fetch-engine
+
+      - name: Verify package integrity
+        run: |
+          set -euo pipefail
+          cd release
+          sha256sum -c ./*.deb.sha256
+          dpkg-deb --info ./*.deb
+          # Pastikan TIDAK ada aset game yang ikut terpaket.
+          if dpkg-deb -c ./*.deb | grep -qiE 'main\.pak|LawnStrings|properties/'; then
+            echo "::error::Paket berisi aset game — ini tidak boleh terjadi."
+            exit 1
+          fi
+          echo "OK: tidak ada aset game di dalam paket."
+
+      - name: Installer pipeline smoke test (synthetic CAB)
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$PWD/tools"
+          python3 - <<'EOF'
+          import sys, tempfile
+          from pathlib import Path
+          sys.path.insert(0, "tests")
+          from test_installer import make_cab, make_pak, LAWNSTRINGS_1073
+          from pvznative import assets
+
+          inner = make_pak({"properties/LawnStrings.txt": LAWNSTRINGS_1073.encode()})
+          exe = b"MZ" + b"\x00" * 1022 + make_cab({"main.pak": inner}, compress=False)
+          with tempfile.TemporaryDirectory() as temp:
+              path = Path(temp) / "setup.exe"
+              path.write_bytes(exe)
+              found = assets.scan_installer(path)
+              target = Path(temp) / "out"
+              assets.install_assets(found, target)
+              assert (target / "main.pak").is_file(), "main.pak hilang"
+              assert (target / "properties" / "LawnStrings.txt").is_file()
+              print("OK: ekstraksi installer berhasil")
+          EOF
+
+      - name: Smoke test extracted package
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/pkg && mkdir -p /tmp/pkg
+          dpkg-deb -x release/*.deb /tmp/pkg
+          /tmp/pkg/usr/bin/pvz-native --where
+          /tmp/pkg/usr/bin/pvz-native --doctor || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pvz-native-deb
+          path: |
+            release/*.deb
+            release/*.sha256
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pvz-native-deb
+          path: dist
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.deb
+            dist/*.sha256
+          generate_release_notes: true
+          body: |
+            **Paket ini tidak berisi aset game.** Kamu perlu menyediakan
+            `main.pak` + `properties/` dari salinan Plants vs. Zombies milikmu
+            sendiri (Steam app 3590, EA App, atau CD original PopCap).
+
+            Instalasi:
+            ```
+            sha256sum -c *.deb.sha256
+            sudo apt install ./pvz-native_*_amd64.deb
+            ```
+            Lihat [NOTICE](NOTICE) untuk pernyataan legal lengkap.

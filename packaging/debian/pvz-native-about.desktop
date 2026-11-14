@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Plants vs. Zombies — Tentang
+Comment=Tentang pembuat, kredit, dan tautan dukungan
+Exec=pvz-native --about
+TryExec=pvz-native
+Icon=io.github.katon17.pvz-native
+Terminal=false
+Categories=Game;Settings;
+Keywords=pvz;tentang;about;kredit;donasi;donate;saweria;ko-fi;
+StartupNotify=true
+NoDisplay=false

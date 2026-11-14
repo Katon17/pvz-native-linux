@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Plants vs. Zombies — Pengaturan
+Comment=Atur layar penuh dan mode widescreen tanpa terminal
+Exec=pvz-native --settings
+TryExec=pvz-native
+Icon=io.github.katon17.pvz-native
+Terminal=false
+Categories=Game;Settings;
+Keywords=pvz;pengaturan;settings;widescreen;fullscreen;layar;
+StartupNotify=true
+NoDisplay=false

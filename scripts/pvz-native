@@ -1,0 +1,373 @@
+#!/bin/sh
+# pvz-native-linux
+# Copyright (C) 2026 Katon Bagaskoro <cimong2356@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option)
+# any later version. See LICENSE for the full text.
+# pvz-native — launcher Plants vs. Zombies native Linux.
+#
+# Tugas launcher ini sengaja dibuat kecil dan bodoh:
+#   1. Pastikan aset game sudah ada (kalau belum, jalankan wizard sekali).
+#   2. Panggil engine PvZ-Portable dengan -resdir/-savedir yang benar.
+#
+# Semua logika berat ada di Python (python3 -m pvznative) supaya mudah dites.
+
+set -eu
+
+APP_NAME="pvz-native"
+ENGINE_DEFAULT="/usr/lib/${APP_NAME}/engine/pvz-portable"
+
+DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/${APP_NAME}"
+ASSETS_DIR="${PVZ_NATIVE_ASSETS:-$DATA_DIR/assets}"
+SAVES_DIR="$DATA_DIR/saves"
+LOGS_DIR="$DATA_DIR/logs"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/${APP_NAME}"
+
+mkdir -p "$ASSETS_DIR" "$SAVES_DIR" "$LOGS_DIR" "$CONFIG_DIR"
+
+# Preferensi widescreen tersimpan di config dir; env var menang.
+WIDE_CONF="$CONFIG_DIR/widescreen"
+if [ -z "${PVZ_WIDESCREEN:-}" ] && [ -f "$WIDE_CONF" ]; then
+    PVZ_WIDESCREEN="$(cat "$WIDE_CONF" 2>/dev/null || echo 0)"
+fi
+if [ "${PVZ_WIDESCREEN:-0}" != "0" ] && [ -n "${PVZ_WIDESCREEN:-}" ]; then
+    PVZ_WIDESCREEN=1
+    export PVZ_WIDESCREEN
+fi
+
+# ---------------------------------------------------------------- helper GUI
+have() { command -v "$1" >/dev/null 2>&1; }
+
+# info <judul> <pesan>
+info() {
+    if [ "${PVZ_NATIVE_NO_GUI:-0}" = "1" ]; then
+        printf '%b: %b\n' "$1" "$2"
+    elif have zenity; then
+        zenity --info --title="$1" --no-wrap --width=440 --text="$2" 2>/dev/null || true
+    elif have kdialog; then
+        kdialog --title "$1" --msgbox "$2" 2>/dev/null || true
+    elif have notify-send; then
+        notify-send "$1" "$2" || true
+    else
+        printf '%s: %s\n' "$1" "$2" >&2
+    fi
+}
+
+# error <judul> <pesan>
+error_box() {
+    if [ "${PVZ_NATIVE_NO_GUI:-0}" = "1" ]; then
+        printf 'ERROR: %b\n' "$2" >&2
+    elif have zenity; then
+        zenity --error --title="$1" --no-wrap --width=480 --text="$2" 2>/dev/null || true
+    elif have kdialog; then
+        kdialog --title "$1" --error "$2" 2>/dev/null || true
+    else
+        printf 'ERROR: %b\n' "$2" >&2
+    fi
+    exit 1
+}
+
+# ------------------------------------------------------------ cari python3
+if have python3; then
+    PYTHON=python3
+    # GTK3 (python3-gi) terpasang untuk interpreter SISTEM, bukan untuk
+    # python dari pyenv/conda/venv. Untuk jendela Pengaturan, pilih
+    # interpreter yang benar-benar bisa "import gi".
+    SYSTEM_PYTHON=/usr/bin/python3
+    if [ -x "$SYSTEM_PYTHON" ] && "$SYSTEM_PYTHON" -c 'import gi' 2>/dev/null; then
+        GTK_PYTHON="$SYSTEM_PYTHON"
+    else
+        GTK_PYTHON=""
+    fi
+    # Paket python pvznative tinggal di /usr/lib/$APP_NAME/pvznative (bawaan
+    # paket .deb) atau di tools/ (saat dijalankan dari source tree). Tanpa
+    # ini, "python3 -m pvznative" akan gagal di sistem dengan Python
+    # yang tidak menambahkan /usr/lib ke sys.path.
+    PYTHONPATH="/usr/lib/${APP_NAME}:$(dirname "$0")/../lib/${APP_NAME}:${PYTHONPATH:-}"
+    export PYTHONPATH
+    # Jangan tulis __pycache__ ke /usr/lib (sering read-only untuk user biasa).
+    PYTHONDONTWRITEBYTECODE=1
+    export PYTHONDONTWRITEBYTECODE
+else
+    error_box "Plants vs. Zombies" \
+        "python3 tidak ditemukan. Ini seharusnya sudah terpasang bersama paket;\ncoba jalankan: sudo apt install --reinstall ${APP_NAME}"
+fi
+
+# ------------------------------------------------------------- parse argumen
+FORCE_SETUP=0
+PASSTHROUGH=""
+WIDE_SAVE=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --setup)
+            # --setup boleh diikuti opsi tambahan (--iso PATH, --from-dir PATH,
+            # --yes) yang seluruhnya ditangani oleh CLI Python.
+            shift
+            FORCE_SETUP=1
+            exec "$PYTHON" -m pvznative setup "$@" ;;
+        --where)
+            printf 'engine : %s\n' "$ENGINE_DEFAULT"
+            printf 'assets : %s\n' "$ASSETS_DIR"
+            printf 'saves  : %s\n' "$SAVES_DIR"
+            printf 'logs   : %s\n' "$LOGS_DIR"
+            printf 'layar  : %s\n' "$("$PYTHON" -c '
+import sys
+sys.path.insert(0, "'"$PYTHONPATH"'")
+from pvznative import display
+print(display.screen_mode("'"$SAVES_DIR"'/registry.regemu"))
+' 2>/dev/null || echo "?")"
+            exit 0 ;;
+        --doctor|--verify|--uninstall)
+            exec "$PYTHON" -m pvznative "${1#--}"
+            ;;
+        --help|-h)
+            cat <<'HELP'
+Pakai: pvz-native [OPSI]
+
+Tanpa opsi        Jalankan game (wizard aset kalau perlu)
+  --setup         Ulangi wizard aset: [--iso FILE | --exe FILE | --from-dir DIR]
+                  [--yes] [--force]
+  --inspect FILE  Periksa ISO/ZIP/folder/.exe tanpa memasang apa pun
+  --settings      Buka jendela Pengaturan (tanpa terminal)
+  --display MODE  Mode layar: fullscreen | windowed | show
+  --wide          Isi seluruh layar (stretch, tanpa batang hitam)
+  --no-wide       Kembali ke rasio 4:3 asli (letterbox)
+  --verify        Validasi ulang aset terpasang
+  --doctor        Diagnosa lingkungan, aset, dan driver grafis
+  --where         Tampilkan lokasi file dan folder
+  --debug         Jalankan dengan log engine tampil di terminal
+  --uninstall     Hapus aset (save game tetap aman)
+  --help          Tampilkan bantuan ini
+HELP
+            exit 0 ;;
+        --widescreen|--wide)
+            PVZ_WIDESCREEN=1
+            export PVZ_WIDESCREEN
+            WIDE_SAVE=1
+            shift ;;
+        --no-widescreen|--no-wide)
+            PVZ_WIDESCREEN=0
+            export PVZ_WIDESCREEN
+            WIDE_SAVE=0
+            shift ;;
+        --display)
+            shift
+            exec "$PYTHON" -m pvznative display "$@" ;;
+        --about|--tentang)
+            # Tentang berdiri sendiri: tanpa ini, `--about` saja akan jatuh ke
+            # alur normal dan MENJALANKAN GAME, bukan membuka dialog.
+            if [ -z "$GTK_PYTHON" ]; then
+                printf '%s\n\n' "${APP_NAME}: jendela Tentang butuh GTK3 (python3-gi)."
+                printf 'Pasang: sudo apt install python3-gi gir1.2-gtk-3.0\n\n'
+                printf 'pvz-native — dibuat oleh Katon Bagaskoro\n'
+                printf '  Saweria : https://saweria.co/Kabako\n'
+                printf '  Ko-fi   : https://ko-fi.com/katonbagaskoro\n'
+                exit 0
+            fi
+            exec "$GTK_PYTHON" -m pvznative settings --about ;;
+        --settings|--pengaturan)
+            if [ -z "$GTK_PYTHON" ]; then
+                error_box "Pengaturan tidak bisa dibuka" \
+                    "Jendela Pengaturan butuh GTK3 (python3-gi).\n\nPasang dulu:\n  sudo apt install python3-gi gir1.2-gtk-3.0\n\nAtau ubah lewat terminal:\n  ${APP_NAME} --wide\n  ${APP_NAME} --no-wide\n  ${APP_NAME} --display fullscreen"
+            fi
+            exec "$GTK_PYTHON" -m pvznative settings ;;
+        --inspect)
+            shift
+            exec "$PYTHON" -m pvznative inspect "$@" ;;
+        --debug|--keep-log)
+            # Mode troubleshooting: log engine mengalir ke terminal, tanpa
+            # dialog. Sebelumnya flag ini hanya dimasukkan ke PASSTHROUGH dan
+            # diteruskan ke engine sebagai argumen tak dikenal -> engine
+            # menolaknya dengan "Invalid command line parameter: --debug".
+            PVZ_NATIVE_DEBUG=1
+            export PVZ_NATIVE_DEBUG
+            shift ;;
+        --)
+            shift
+            PASSTHROUGH="$PASSTHROUGH $*"
+            break ;;
+        --*)
+            # Opsi tak dikenal: JANGAN ditelan diam-diam. Dulu `--inspect`
+            # masuk ke PASSTHROUGH lalu hilang tanpa pesan sama sekali.
+            printf '%s: opsi tidak dikenal: %s\n' "$APP_NAME" "$1" >&2
+            printf 'Jalankan "%s --help" untuk daftar opsi.\n' "$APP_NAME" >&2
+            exit 2 ;;
+        *)
+            PASSTHROUGH="$PASSTHROUGH $1"
+            shift ;;
+    esac
+done
+
+# Simpan preferensi widescreen kalau diubah lewat flag.
+if [ -n "$WIDE_SAVE" ]; then
+    printf '%s' "$WIDE_SAVE" > "$WIDE_CONF" 2>/dev/null || true
+fi
+
+# ------------------------------------------------------------- cek asset
+assets_ok() {
+    [ -f "$ASSETS_DIR/main.pak" ] && [ -d "$ASSETS_DIR/properties" ]
+}
+
+if [ "$FORCE_SETUP" -eq 1 ] || ! assets_ok; then
+    if ! "$PYTHON" -m pvznative setup --target "$ASSETS_DIR"; then
+        error_box "Penyiapan belum selesai" \
+            "Aset game belum terpasang, jadi Plants vs. Zombies belum bisa dijalankan.\n\nJalankan lagi lewat menu, atau dari terminal:\n  ${APP_NAME} --setup"
+    fi
+fi
+
+if ! assets_ok; then
+    error_box "Aset tidak lengkap" \
+        "Folder aset tidak berisi main.pak dan properties/.\n\nLokasi: $ASSETS_DIR\nJalankan: ${APP_NAME} --setup"
+fi
+
+# Preflight: hentikan lebih awal kalau main.pak tidak berisi file yang diminta
+# engine saat startup. Tanpa ini user hanya melihat game menutup diri sendiri
+# dengan "missing resource compiled/reanim/...".
+if [ "${PVZ_NATIVE_NO_PREFLIGHT:-0}" != "1" ]; then
+    preflight="$("$PYTHON" - "$ASSETS_DIR/main.pak" <<'PYEOF' 2>&1
+import sys
+# PYTHONPATH sudah di-set launcher; jangan hardcode path paket.
+try:
+    from pvznative import installer
+    report = installer.audit_pak_contents(sys.argv[1])
+except Exception:
+    print("SKIP")
+    raise SystemExit(0)
+if report.get("error"):
+    print("SKIP")
+elif report["missing"]:
+    print("MISSING " + "|".join(report["missing"]))
+else:
+    print("OK")
+PYEOF
+)"
+    case "$preflight" in
+        MISSING*)
+            missing_list="$(printf '%s' "$preflight" | sed 's/^MISSING //' | tr '|' '\n')"
+            error_box "Aset tidak kompatibel" \
+                "main.pak yang terpasang tidak berisi file yang dibutuhkan engine:\n\n$missing_list\n\nIni biasanya berarti paket berasal dari versi lain (bukan rilis PC 1.2.0.1073).\n\nPakai aset dari rilis PC lengkap:\n  ${APP_NAME} --setup --force\n\nPeriksa dengan: ${APP_NAME} --verify"
+            ;;
+    esac
+fi
+
+# --------------------------------------------------------------- cari engine
+ENGINE="${PVZ_ENGINE:-$ENGINE_DEFAULT}"
+if [ ! -x "$ENGINE" ]; then
+    # Fallback untuk pemakaian dari source tree / AppImage.
+    for candidate in \
+        "$(dirname "$0")/../lib/${APP_NAME}/engine/pvz-portable" \
+        "/usr/local/lib/${APP_NAME}/engine/pvz-portable" \
+        "$(command -v pvz-portable 2>/dev/null || true)"
+    do
+        if [ -n "${candidate:-}" ] && [ -x "$candidate" ]; then
+            ENGINE="$candidate"
+            break
+        fi
+    done
+fi
+
+if [ ! -x "$ENGINE" ]; then
+    error_box "Engine tidak ditemukan" \
+        "Binary engine PvZ-Portable tidak ada di:\n$ENGINE_DEFAULT\n\nPaket mungkin rusak. Coba:\nsudo apt install --reinstall ${APP_NAME}"
+fi
+
+# ------------------------------------------------------------------- jalankan
+# -resdir/-savedir sengaja ditaruh PALING AKHIR supaya launcher yang menang
+# kalau user ikut menyebutkan flag tersebut di PASSTHROUGH.
+LOG_FILE="$LOGS_DIR/run-$(date +%Y%m%d-%H%M%S).log"
+
+# Engine PvZ-Portable keluar dengan kode 0 walaupun gagal fatal (mis. tidak
+# bisa membuat konteks OpenGL). Jadi kode keluar saja tidak cukup: log ikut
+# diperiksa. Tanpa ini, user hanya melihat "tidak terjadi apa-apa".
+run_engine() {
+    # shellcheck disable=SC2086
+    "$ENGINE" $PASSTHROUGH -resdir "$ASSETS_DIR/" -savedir "$SAVES_DIR/" \
+        >"$LOG_FILE" 2>&1
+}
+
+if [ -n "${PVZ_NATIVE_DEBUG:-}" ]; then
+    # Mode debug: log mengalir ke terminal, masalah ditampilkan apa adanya.
+    # shellcheck disable=SC2086
+    "$ENGINE" $PASSTHROUGH -resdir "$ASSETS_DIR/" -savedir "$SAVES_DIR/" 2>&1 | tee "$LOG_FILE"
+    status=$?
+    exit "$status"
+fi
+
+run_engine
+status=$?
+
+# Kode >128 berarti proses terbunuh sinyal (crash), bukan keluar wajar.
+crash_signal=0
+if [ "$status" -gt 128 ]; then
+    crash_signal=$((status - 128))
+fi
+
+signal_name() {
+    case "$1" in
+        4)  echo "SIGILL (instruksi ilegal — CPU/driver tidak cocok)" ;;
+        6)  echo "SIGABRT (program membatalkan diri)" ;;
+        7)  echo "SIGBUS (akses memori tidak valid)" ;;
+        8)  echo "SIGFPE (kesalahan aritmetika)" ;;
+        9)  echo "SIGKILL (proses dihentikan paksa)" ;;
+        11) echo "SIGSEGV (segmentation fault)" ;;
+        13) echo "SIGPIPE" ;;
+        15) echo "SIGTERM (dihentikan)" ;;
+        *)  echo "sinyal $1" ;;
+    esac
+}
+
+fatal_reason=""
+if [ -s "$LOG_FILE" ]; then
+    if grep -q "Failed to create any OpenGL context" "$LOG_FILE"; then
+        fatal_reason="Driver OpenGL tidak bisa membuat konteks.\n\nLangkah yang biasanya menyelesaikan:\n  1. sudo apt install libgl1-mesa-dri mesa-utils\n  2. Pastikan tidak ada variabel seperti MESA_GL_VERSION_OVERRIDE\n  3. Coba: LIBGL_ALWAYS_SOFTWARE=1 ${APP_NAME}\n  4. Kalau pakai SSH/remote, jalankan di sesi desktop lokal"
+    elif grep -q "Failed to load image" "$LOG_FILE"; then
+        fatal_reason="Ada file aset gambar yang tidak ditemukan atau korup.\n\nJalankan: ${APP_NAME} --verify\nlalu ${APP_NAME} --setup --force"
+    elif grep -q "Invalid command line parameter" "$LOG_FILE"; then
+        fatal_reason="Argumen launcher diteruskan ke engine dan ditolak engine.\nIni bug launcher; jalankan '${APP_NAME} --doctor' dan laporkan."
+    elif grep -q "FATAL" "$LOG_FILE"; then
+        fatal_reason="Engine berhenti karena error fatal.\nLihat baris terakhir log di bawah."
+    fi
+fi
+
+if [ "$crash_signal" -ne 0 ] && [ -z "$fatal_reason" ]; then
+    fatal_reason="Game crash: $(signal_name "$crash_signal").\n\nIni biasanya masalah driver grafis atau aset yang tidak lengkap."
+fi
+
+if [ -n "$fatal_reason" ] || [ "$status" -ne 0 ]; then
+    if [ -n "$fatal_reason" ]; then
+        message="$fatal_reason"
+    else
+        message="Game berhenti dengan kode $status."
+    fi
+
+    # Sertakan baris log terakhir supaya user tidak perlu membuka file.
+    if [ -s "$LOG_FILE" ]; then
+        tail_lines="$(grep -v '^INFO:' "$LOG_FILE" | tail -n 6)"
+        if [ -n "$tail_lines" ]; then
+            message="$message\n\n--- log terakhir ---\n$tail_lines"
+        fi
+    fi
+
+    # Simpan log dengan nama tetap supaya mudah ditemukan dan dilampirkan.
+    KEEP_LOG="$LOGS_DIR/last-crash.log"
+    if [ -s "$LOG_FILE" ]; then
+        cp "$LOG_FILE" "$KEEP_LOG" 2>/dev/null || KEEP_LOG="$LOG_FILE"
+    else
+        KEEP_LOG="$LOG_FILE"
+    fi
+
+    if [ -s "$LOG_FILE" ]; then
+        error_box "Plants vs. Zombies gagal dijalankan" \
+            "$message\n\nLog lengkap: $KEEP_LOG\nDiagnosa: ${APP_NAME} --doctor\n\nJalankan '${APP_NAME} --debug' untuk melihat log langsung."
+    elif [ "$status" -ne 0 ]; then
+        error_box "Plants vs. Zombies gagal dijalankan" \
+            "$message\n\nDiagnosa: ${APP_NAME} --doctor"
+    fi
+    exit 1
+fi
+
+# Berjalan normal: log tidak perlu disimpan.
+rm -f "$LOG_FILE"
+exit 0

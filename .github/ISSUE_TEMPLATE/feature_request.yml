@@ -1,0 +1,22 @@
+name: Usulan fitur
+description: Ide perbaikan untuk launcher atau packaging
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Masalah apa yang mau diselesaikan?
+      description: Mulai dari masalah user, bukan dari solusi teknis.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Usulanmu
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Area
+      options: [Launcher, Ekstraksi aset, Packaging, Dokumentasi, Lainnya]
+    validations:
+      required: true

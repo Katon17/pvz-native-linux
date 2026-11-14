@@ -1,0 +1,99 @@
+# GitHub Actions — pemeriksa atribusi
+#
+# Tujuan: mencegah orang mengambil repo ini, menghapus nama penulis, lalu
+# menerbitkannya ulang sebagai karya sendiri. Ini BUKAN pengaman teknis
+# (kode sumber selalu bisa disalin), melainkan jaring bukti: setiap push
+# meninggalkan jejak publik bertanggal bahwa repo ini yang asli.
+
+name: attribution
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 3 * * 1"   # setiap Senin 03:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  check-notice:
+    name: Notis hak cipta masih utuh
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cek LICENSE
+        run: |
+          set -euo pipefail
+          test -f LICENSE || { echo "::error::LICENSE hilang"; exit 1; }
+          head -3 LICENSE | grep -q "GNU GENERAL PUBLIC LICENSE" \
+            || { echo "::error::LICENSE bukan GPL"; exit 1; }
+          echo "OK: LICENSE utuh"
+
+      - name: Cek NOTICE
+        run: |
+          set -euo pipefail
+          test -f NOTICE || { echo "::error::NOTICE hilang"; exit 1; }
+          grep -qi "Katon Bagaskoro" NOTICE \
+            || { echo "::error::nama penulis hilang dari NOTICE"; exit 1; }
+          echo "OK: NOTICE menyebut penulis"
+
+      - name: Cek header hak cipta di berkas sumber
+        run: |
+          set -euo pipefail
+          gagal=0
+          for f in scripts/pvz-native build-deb.sh; do
+            if ! grep -q "Copyright (C) 2026 Katon Bagaskoro" "$f"; then
+              echo "::error file=$f::header hak cipta hilang"
+              gagal=1
+            fi
+          done
+          for f in tools/pvznative/*.py; do
+            if ! grep -q "Copyright (C) 2026 Katon Bagaskoro" "$f"; then
+              echo "::error file=$f::header hak cipta hilang"
+              gagal=1
+            fi
+          done
+          exit $gagal
+
+      - name: Cek berkas legal wajib ada
+        run: |
+          set -euo pipefail
+          for f in LICENSE NOTICE SECURITY.md CONTRIBUTING.md \
+                   docs/PROTECTION.md docs/SPECIFICATIONS.md; do
+            test -f "$f" || { echo "::error::berkas $f hilang"; exit 1; }
+          done
+          echo "OK: semua berkas legal ada"
+
+      - name: Tolak aset game yang ikut ter-commit
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -iE 'main\.pak$|LawnStrings|^properties/'; then
+            echo "::error::aset game ikut ter-commit — hapus sebelum push"
+            exit 1
+          fi
+          echo "OK: tidak ada aset game di repo"
+
+      - name: Tolak kredensial yang tidak sengaja ter-commit
+        run: |
+          set -euo pipefail
+          pola='(ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY)'
+          if git grep -nEI "$pola" -- . ':!*.md' ':!.github/*'; then
+            echo "::error::kemungkinan kredensial ter-commit"
+            exit 1
+          fi
+          echo "OK: tidak ada kredensial"
+
+  provenance:
+    name: Catat provenance biner engine
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Baca checksum yang dipin
+        run: |
+          set -euo pipefail
+          grep -E '^ENGINE_SHA256=' build-deb.sh
+          echo "Patokan ini harus cocok dengan biner di setiap rilis." 

@@ -1,0 +1,64 @@
+name: Laporan bug
+description: Game tidak jalan, ekstraksi gagal, atau perilaku aneh
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Sebelum lanjut: jalankan `pvz-native --doctor` dan tempel hasilnya.
+        **Jangan lampirkan `main.pak`, isi `properties/`, atau tautan unduhan
+        game.**
+  - type: textarea
+    id: what
+    attributes:
+      label: Apa yang terjadi?
+      description: Jelaskan gejala yang kamu lihat, bukan hanya "tidak jalan".
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Apa yang kamu harapkan?
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output `pvz-native --doctor`
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log dari `~/.local/share/pvz-native/logs/`
+      description: Tempel 40 baris terakhir. Boleh juga kosongkan jika tidak ada log.
+      render: shell
+  - type: input
+    id: distro
+    attributes:
+      label: Distro & versi
+      placeholder: Linux Mint 22.3 XFCE, kernel 6.8
+    validations:
+      required: true
+  - type: dropdown
+    id: assets
+    attributes:
+      label: Sumber aset
+      options:
+        - ISO 1.2.0.1073 (PopCap standalone)
+        - Folder Steam GOTY (1.2.0.1096)
+        - ZIP
+        - Folder instalasi PopCap/Wine
+        - Belum punya aset
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Konfirmasi
+      options:
+        - label: Saya memiliki salinan sah game ini
+          required: true
+        - label: Laporan ini tidak berisi aset game atau tautan unduhan ilegal
+          required: true

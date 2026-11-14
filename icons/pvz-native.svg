@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Plants vs. Zombies native Linux">
+  <!-- Ikon flat: tanpa gradient/filter supaya render konsisten di semua toolkit. -->
+  <rect width="512" height="512" rx="97" fill="#1d5c26"/>
+  <rect width="512" height="256" rx="97" fill="#2e8b3e"/>
+  <rect y="200" width="512" height="312" fill="#1d5c26"/>
+
+  <!-- batang -->
+  <rect x="283" y="290" width="34" height="170" rx="17" fill="#2e7632"/>
+  <!-- daun -->
+  <ellipse cx="215" cy="400" rx="78" ry="37" fill="#96d65a" transform="rotate(-16 215 400)"/>
+  <ellipse cx="368" cy="365" rx="74" ry="34" fill="#96d65a" transform="rotate(14 368 365)"/>
+
+  <!-- kepala -->
+  <circle cx="300" cy="190" r="110" fill="#96d65a" stroke="#286c2c" stroke-width="7"/>
+  <circle cx="263" cy="141" r="37" fill="#e9ffd0" opacity="0.55"/>
+  <!-- moncong -->
+  <circle cx="420" cy="198" r="48" fill="#5dbb45" stroke="#286c2c" stroke-width="7"/>
+  <circle cx="420" cy="198" r="18" fill="#0d1f0c" opacity="0.55"/>
+  <!-- mata -->
+  <ellipse cx="344" cy="154" rx="22" ry="32" fill="#10230f"/>
+  <circle cx="350" cy="140" r="7" fill="#ffffff" opacity="0.9"/>
+
+  <!-- Tux -->
+  <g transform="translate(52 286)">
+    <ellipse cx="75" cy="88" rx="75" ry="88" fill="#0b1620"/>
+    <ellipse cx="75" cy="105" rx="42" ry="52" fill="#fdf6e3"/>
+    <ellipse cx="52" cy="52" rx="17" ry="20" fill="#ffffff"/>
+    <ellipse cx="98" cy="52" rx="17" ry="20" fill="#ffffff"/>
+    <circle cx="53" cy="55" r="8" fill="#0b1620"/>
+    <circle cx="97" cy="55" r="8" fill="#0b1620"/>
+    <path d="M75 75l27 16-27 16-27-16z" fill="#f9a825"/>
+    <ellipse cx="54" cy="158" rx="24" ry="9" fill="#f9a825"/>
+    <ellipse cx="98" cy="158" rx="24" ry="9" fill="#f9a825"/>
+  </g>
+</svg>

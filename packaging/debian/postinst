@@ -1,0 +1,24 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        # Pastikan direktori data user tidak perlu dibuat manual.
+        # (Dibuat saat pertama kali launcher dijalankan, bukan di sini,
+        # karena postinst berjalan sebagai root.)
+        if [ -x /usr/bin/update-desktop-database ]; then
+            update-desktop-database -q /usr/share/applications || true
+        fi
+        if [ -x /usr/bin/gtk-update-icon-cache ] && [ -d /usr/share/icons/hicolor ]; then
+            gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+        fi
+        ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+    *)
+        echo "postinst dipanggil dengan argumen tak dikenal: $1" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

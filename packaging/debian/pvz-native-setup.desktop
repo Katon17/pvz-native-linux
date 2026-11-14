@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Plants vs. Zombies — Setup Aset
+Comment=Ekstrak aset game dari ISO atau folder instalasi
+Exec=pvz-native --setup
+TryExec=pvz-native
+Icon=io.github.katon17.pvz-native
+Terminal=false
+Categories=Game;Settings;
+Keywords=pvz;setup;aset;iso;install;
+StartupNotify=true
+NoDisplay=false

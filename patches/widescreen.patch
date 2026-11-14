@@ -1,0 +1,635 @@
+diff --git a/src/GameConstants.h b/src/GameConstants.h
+index da243d7..4b5dfc8 100644
+--- a/src/GameConstants.h
++++ b/src/GameConstants.h
+@@ -27,6 +27,12 @@ constexpr const double PI = 3.141592653589793;
+ // Constants
+ constexpr const int BOARD_WIDTH = 800;
+ constexpr const int BOARD_HEIGHT = 600;
++
++// WideLayout: saat PVZ_WIDESCREEN aktif, ruang logika dilebarkan ke rasio
++// 16:9 pada tinggi tetap 600. Widget yang memakai mWidth/2 otomatis ikut
++// berada di tengah; hanya posisi mati yang perlu disesuaikan.
++constexpr const int WIDE_LAYOUT_WIDTH = 1067;
++
+ constexpr const int WIDE_BOARD_WIDTH = 800;
+ constexpr const int BOARD_OFFSET = 220;
+ constexpr const int BOARD_EDGE = -100;
+diff --git a/src/Lawn/Widget/NewOptionsDialog.cpp b/src/Lawn/Widget/NewOptionsDialog.cpp
+index 406204d..0988108 100644
+--- a/src/Lawn/Widget/NewOptionsDialog.cpp
++++ b/src/Lawn/Widget/NewOptionsDialog.cpp
+@@ -27,6 +27,8 @@
+ #include "../../LawnApp.h"
+ #include "../System/Music.h"
+ #include "../../Resources.h"
++#include "graphics/GLInterface.h"
++#include "../../GameConstants.h"
+ #include "NewOptionsDialog.h"
+ #include "../../ConstEnums.h"
+ #include "../../PvzpLib/PvzpFoley.h"
+@@ -75,6 +77,7 @@ NewOptionsDialog::NewOptionsDialog(LawnApp* theApp, bool theFromGameSelector) :
+ 	mSfxVolumeSlider->SetValue(theApp->GetSfxVolume() / 0.65);
+ 
+ 	mFullscreenCheckbox = MakeNewCheckbox(NewOptionsDialog::NewOptionsDialog_Fullscreen, this, !theApp->mIsWindowed);
++	mWidescreenCheckbox = MakeNewCheckbox(NewOptionsDialog::NewOptionsDialog_Widescreen, this, gWideScreenStretch);
+ 	mHardwareAccelerationCheckbox = MakeNewCheckbox(NewOptionsDialog::NewOptionsDialog_HardwareAcceleration, this, theApp->Is3DAccelerated());
+ 
+ 	if (mFromGameSelector)
+@@ -128,6 +131,7 @@ void NewOptionsDialog::AddedToManager(Sexy::WidgetManager* theWidgetManager)
+ 	AddWidget(mSfxVolumeSlider.get());
+ 	AddWidget(mHardwareAccelerationCheckbox.get());
+ 	AddWidget(mFullscreenCheckbox.get());
++	AddWidget(mWidescreenCheckbox.get());
+ 	AddWidget(mBackToGameButton.get());
+ }
+ 
+@@ -138,6 +142,7 @@ void NewOptionsDialog::RemovedFromManager(Sexy::WidgetManager* theWidgetManager)
+ 	RemoveWidget(mMusicVolumeSlider.get());
+ 	RemoveWidget(mSfxVolumeSlider.get());
+ 	RemoveWidget(mFullscreenCheckbox.get());
++	RemoveWidget(mWidescreenCheckbox.get());
+ 	RemoveWidget(mHardwareAccelerationCheckbox.get());
+ 	RemoveWidget(mBackToMainButton.get());
+ 	RemoveWidget(mBackToGameButton.get());
+@@ -147,10 +152,11 @@ void NewOptionsDialog::RemovedFromManager(Sexy::WidgetManager* theWidgetManager)
+ void NewOptionsDialog::Resize(int theX, int theY, int theWidth, int theHeight)
+ {
+ 	Dialog::Resize(theX, theY, theWidth, theHeight);
+-	mMusicVolumeSlider->Resize(199, 116, 135, 40);
+-	mSfxVolumeSlider->Resize(199, 143, 135, 40);
+-	mHardwareAccelerationCheckbox->Resize(283, 175, 46, 45);
+-	mFullscreenCheckbox->Resize(284, 206, 46, 45);
++	mMusicVolumeSlider->Resize(199, 104, 135, 40);
++	mSfxVolumeSlider->Resize(199, 131, 135, 40);
++	mHardwareAccelerationCheckbox->Resize(283, 163, 46, 45);
++	mFullscreenCheckbox->Resize(284, 194, 46, 45);
++	mWidescreenCheckbox->Resize(284, 225, 46, 45);
+ 	mAlmanacButton->Resize(107, 241, 209, 46);
+ 	mRestartButton->Resize(mAlmanacButton->mX, mAlmanacButton->mY + 43, 209, 46);
+ 	mBackToMainButton->Resize(mRestartButton->mX, mRestartButton->mY + 43, 209, 46);
+@@ -162,8 +168,13 @@ void NewOptionsDialog::Resize(int theX, int theY, int theWidth, int theHeight)
+ 		mSfxVolumeSlider->mY += 10;
+ 		mHardwareAccelerationCheckbox->mY += 15;
+ 		mFullscreenCheckbox->mY += 20;
++		mWidescreenCheckbox->mY += 25;
+ 	}
+ 
++	// Area klik tautan "Tentang" (label digambar rata kanan di kAboutLinkY).
++	int aLinkY = kAboutLinkY + (mFromGameSelector ? kAboutLinkOffsetSelector : 0);
++	mAboutLinkRect = Sexy::Rect(120, aLinkY - 12, 254, 26);
++
+ 	if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || mApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM)
+ 	{
+ 		mAlmanacButton->mY += 43;
+@@ -178,12 +189,14 @@ void NewOptionsDialog::Draw(Sexy::Graphics* g)
+ 	int aSfxOffset = 0;
+ 	int a3DAccelOffset = 0;
+ 	int aFullScreenOffset = 0;
++	int aWideScreenOffset = 0;
+ 	if (mFromGameSelector)
+ 	{
+ 		aMusicOffset = 5;
+ 		aSfxOffset = 10;
+ 		a3DAccelOffset = 15;
+ 		aFullScreenOffset = 20;
++		aWideScreenOffset = 25;
+ 	}
+ 	Sexy::Color aTextColor(107, 109, 145);
+ 
+@@ -192,14 +205,114 @@ void NewOptionsDialog::Draw(Sexy::Graphics* g)
+ 	float aFontScale = static_cast<float>(mApp->GetDouble("OPTION_DLG_LABEL_FONT_SCALE", 1.0));
+ 	if (aFontScale != 1.0f)
+ 		g->SetScale(aFontScale, aFontScale, 0.0f, 0.0f);
+-	PvzpDrawString(g, mApp->GetString("OPTIONS_MUSIC_LABEL", "Music"), aSliderLabelsX, 140 + aMusicOffset, FONT_DWARVENTODCRAFT18, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
+-	PvzpDrawString(g, mApp->GetString("OPTIONS_SOUNDFX", "Sound FX"), aSliderLabelsX, 167 + aSfxOffset, FONT_DWARVENTODCRAFT18, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
+-	PvzpDrawString(g, mApp->GetString("OPTIONS_3D_ACCELERATION", "3D Acceleration"), aCheckboxLabelsX, 197 + a3DAccelOffset, FONT_DWARVENTODCRAFT18, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
+-	PvzpDrawString(g, mApp->GetString("OPTIONS_FULL_SCREEN", "Full Screen"), aCheckboxLabelsX, 229 + aFullScreenOffset, FONT_DWARVENTODCRAFT18, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
++	PvzpDrawString(g, mApp->GetString("OPTIONS_MUSIC_LABEL", "Music"), aSliderLabelsX, 128 + aMusicOffset, FONT_DWARVENTODCRAFT18, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
++	PvzpDrawString(g, mApp->GetString("OPTIONS_SOUNDFX", "Sound FX"), aSliderLabelsX, 155 + aSfxOffset, FONT_DWARVENTODCRAFT18, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
++	PvzpDrawString(g, mApp->GetString("OPTIONS_3D_ACCELERATION", "3D Acceleration"), aCheckboxLabelsX, 185 + a3DAccelOffset, FONT_DWARVENTODCRAFT18, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
++	PvzpDrawString(g, mApp->GetString("OPTIONS_FULL_SCREEN", "Full Screen"), aCheckboxLabelsX, 217 + aFullScreenOffset, FONT_DWARVENTODCRAFT18, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
++	PvzpDrawString(g, mApp->GetString("OPTIONS_FILL_SCREEN", "Fill Screen (16:9)"), aCheckboxLabelsX, 248 + aWideScreenOffset, FONT_DWARVENTODCRAFT18, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
++
++	// ---- Tentang: tautan kecil di bawah blok opsi
++	Sexy::Color aLinkColor = mAboutHover ? Sexy::Color(150, 210, 120) : Sexy::Color(120, 160, 105);
++	PvzpDrawString(g, "Tentang / About", aCheckboxLabelsX, kAboutLinkY + aWideScreenOffset, FONT_DWARVENTODCRAFT15, aLinkColor, DrawStringJustification::DS_ALIGN_RIGHT);
++
++	if (mAboutPanelOpen)
++		DrawAboutPanel(g, aFontScale);
++
+ 	if (aFontScale != 1.0f)
+ 		g->SetScale(1.0f, 1.0f, 0.0f, 0.0f);
+ }
+ 
++void NewOptionsDialog::SetAboutPanelOpen(bool theOpen)
++{
++	mAboutPanelOpen = theOpen;
++	if (!theOpen)
++		mAboutLinkHover = -1;
++
++	// Kontrol adalah widget anak, digambar SETELAH Draw() induk, jadi panel
++	// Tentang akan tertembus checkbox/slider kalau dibiarkan tampil.
++	const bool aShow = !theOpen;
++	mMusicVolumeSlider->SetVisible(aShow);
++	mSfxVolumeSlider->SetVisible(aShow);
++	mHardwareAccelerationCheckbox->SetVisible(aShow);
++	mFullscreenCheckbox->SetVisible(aShow);
++	mWidescreenCheckbox->SetVisible(aShow);
++}
++
++Sexy::Rect NewOptionsDialog::AboutLinkRect(int theIndex) const
++{
++	const int aTop = theIndex == 0 ? kLinkSaweriaY : kLinkKofiY;
++	return Sexy::Rect(kAboutPanelX + 24, kAboutPanelY + aTop, kAboutPanelW - 48, kLinkH);
++}
++
++void NewOptionsDialog::DrawAboutPanel(Sexy::Graphics* g, float theFontScale)
++{
++	// Panel menimpa seluruh blok opsi. Latarnya digambar penuh dulu supaya
++	// label lama tidak tembus, lalu isi Tentang di atasnya.
++	g->SetColor(Sexy::Color(34, 36, 56));
++	g->FillRect(kAboutPanelX, kAboutPanelY, kAboutPanelW, kAboutPanelH);
++
++	g->SetColor(Sexy::Color(92, 96, 136));
++	g->DrawRect(kAboutPanelX, kAboutPanelY, kAboutPanelW, kAboutPanelH);
++	g->SetColor(Sexy::Color(58, 62, 92));
++	g->DrawRect(kAboutPanelX + 3, kAboutPanelY + 3, kAboutPanelW - 6, kAboutPanelH - 6);
++
++	if (theFontScale != 1.0f)
++		g->SetScale(1.0f, 1.0f, 0.0f, 0.0f);
++
++	// Semua koordinat Y di bawah ini RELATIF terhadap puncak panel.
++	const int aMid = kAboutPanelX + kAboutPanelW / 2;
++	const int aPad = kAboutPanelX + 24;
++
++	PvzpDrawString(g, "Plants vs. Zombies", aMid, kAboutPanelY + 18, FONT_DWARVENTODCRAFT18, Sexy::Color(255, 232, 130), DrawStringJustification::DS_ALIGN_CENTER);
++	PvzpDrawString(g, "Linux Native", aMid, kAboutPanelY + 40, FONT_DWARVENTODCRAFT15, Sexy::Color(198, 204, 226), DrawStringJustification::DS_ALIGN_CENTER);
++
++	PvzpDrawString(g, "Dibuat oleh", aMid, kAboutPanelY + 72, FONT_DWARVENTODCRAFT12, Sexy::Color(158, 164, 190), DrawStringJustification::DS_ALIGN_CENTER);
++	PvzpDrawString(g, "Katon Bagaskoro", aMid, kAboutPanelY + 92, FONT_DWARVENTODCRAFT18, Sexy::Color(240, 242, 250), DrawStringJustification::DS_ALIGN_CENTER);
++
++	g->SetColor(Sexy::Color(70, 74, 108));
++	g->FillRect(aPad, kAboutPanelY + 108, kAboutPanelW - 48, 1);
++
++	PvzpDrawString(g, "Dukung proyek ini", aMid, kAboutPanelY + 124, FONT_DWARVENTODCRAFT12, Sexy::Color(158, 164, 190), DrawStringJustification::DS_ALIGN_CENTER);
++
++	const char* aLabels[2] = { "Saweria", "Ko-fi" };
++	for (int i = 0; i < 2; i++)
++	{
++		Sexy::Rect aRect = AboutLinkRect(i);
++		const bool aHover = (mAboutLinkHover == i);
++		g->SetColor(aHover ? Sexy::Color(52, 88, 60) : Sexy::Color(44, 48, 74));
++		g->FillRect(aRect.mX, aRect.mY, aRect.mWidth, aRect.mHeight);
++		g->SetColor(aHover ? Sexy::Color(140, 220, 140) : Sexy::Color(88, 124, 88));
++		g->DrawRect(aRect.mX, aRect.mY, aRect.mWidth, aRect.mHeight);
++		PvzpDrawString(
++			g, aLabels[i],
++			aRect.mX + aRect.mWidth / 2, aRect.mY + 16,
++			FONT_DWARVENTODCRAFT15,
++			aHover ? Sexy::Color(200, 255, 190) : Sexy::Color(150, 210, 130),
++			DrawStringJustification::DS_ALIGN_CENTER);
++	}
++
++	PvzpDrawString(g, "Engine PvZ-Portable (LGPL-3.0)", aMid, kAboutPanelY + 216, FONT_DWARVENTODCRAFT12, Sexy::Color(140, 146, 172), DrawStringJustification::DS_ALIGN_CENTER);
++	PvzpDrawString(g, "PvZ (c) EA - proyek tidak resmi", aMid, kAboutPanelY + 232, FONT_DWARVENTODCRAFT12, Sexy::Color(120, 126, 152), DrawStringJustification::DS_ALIGN_CENTER);
++
++	if (theFontScale != 1.0f)
++		g->SetScale(theFontScale, theFontScale, 0.0f, 0.0f);
++
++	g->SetColor(Sexy::Color::White);
++}
++
++void NewOptionsDialog::OpenSupportLink(int theIndex)
++{
++	const char* aUrl = theIndex == 0
++		? "https://saweria.co/Kabako"
++		: "https://ko-fi.com/katonbagaskoro";
++
++	// SexyAppBase::OpenURL cuma stub di port ini (tidak pernah memanggil
++	// xdg-open), jadi browser dibuka lewat SDL yang sudah menangani
++	// xdg-open / ShellExecute sesuai platform.
++	if (!SDL_OpenURL(aUrl))
++		PvzpLogLn("Gagal membuka tautan {}: {}", aUrl, SDL_GetError());
++}
++
+ void NewOptionsDialog::SliderVal(int theId, double theVal)
+ {
+ 	switch (theId)
+@@ -243,6 +356,15 @@ void NewOptionsDialog::CheckboxChecked(int theId, bool checked)
+ 		}
+ 		break;
+ 
++	case NewOptionsDialog::NewOptionsDialog_Widescreen:
++		// Cabang stretch di GLInterface::UpdateViewport membaca flag ini
++		// setiap frame, jadi perubahan langsung terlihat.
++		gWideScreenStretch = checked;
++		gWideLayout = false;
++		gLogicalWidth = gWideScreenStretch ? WIDE_LAYOUT_WIDTH : BOARD_WIDTH;
++		mApp->RegistryWriteInteger("WidescreenStretch", checked ? 1 : 0);
++		break;
++
+ 	case NewOptionsDialog::NewOptionsDialog_HardwareAcceleration:
+ 		if (checked)
+ 		{
+@@ -280,6 +402,65 @@ void NewOptionsDialog::CheckboxChecked(int theId, bool checked)
+ 	}
+ }
+ 
++void NewOptionsDialog::MouseMove(int theX, int theY)
++{
++	Dialog::MouseMove(theX, theY);
++	mAboutHover = mAboutLinkRect.Contains(theX, theY);
++
++	mAboutLinkHover = -1;
++	if (mAboutPanelOpen)
++	{
++		for (int i = 0; i < 2; i++)
++		{
++			if (AboutLinkRect(i).Contains(theX, theY))
++				mAboutLinkHover = i;
++		}
++	}
++}
++
++void NewOptionsDialog::MouseDown(int theX, int theY, int theClickCount)
++{
++	// Panel Tentang sedang terbuka: cek tombol tautan dulu, selain itu klik
++	// di mana pun menutup panel. Klik tidak diteruskan ke checkbox di
++	// belakangnya.
++	if (mAboutPanelOpen)
++	{
++		for (int i = 0; i < 2; i++)
++		{
++			if (AboutLinkRect(i).Contains(theX, theY))
++			{
++				OpenSupportLink(i);
++				mApp->PlaySample(SOUND_BUTTONCLICK);
++				return;
++			}
++		}
++
++		SetAboutPanelOpen(false);
++		mApp->PlaySample(SOUND_BUTTONCLICK);
++		return;
++	}
++
++	if (mAboutLinkRect.Contains(theX, theY))
++	{
++		SetAboutPanelOpen(true);
++		mApp->PlaySample(SOUND_BUTTONCLICK);
++		return;
++	}
++
++	Dialog::MouseDown(theX, theY, theClickCount);
++}
++
++void NewOptionsDialog::MouseUp(int theX, int theY, int theClickCount)
++{
++	if (mAboutPanelOpen)
++		return;
++
++	if (mAboutLinkRect.Contains(theX, theY))
++		return;
++
++	Dialog::MouseUp(theX, theY, theClickCount);
++}
++
+ void NewOptionsDialog::KeyDown(Sexy::KeyCode theKey)
+ {
+ 	if (mApp->mBoard)
+@@ -293,7 +474,10 @@ void NewOptionsDialog::KeyDown(Sexy::KeyCode theKey)
+ 	}
+ 	else if (theKey == KeyCode::KEYCODE_ESCAPE)
+ 	{
+-		Dialog::ButtonDepress(Dialog::ID_CANCEL);
++		if (mAboutPanelOpen)
++			SetAboutPanelOpen(false);
++		else
++			Dialog::ButtonDepress(Dialog::ID_CANCEL);
+ 	}
+ }
+ 
+diff --git a/src/Lawn/Widget/NewOptionsDialog.h b/src/Lawn/Widget/NewOptionsDialog.h
+index 436d6b9..ec22bce 100644
+--- a/src/Lawn/Widget/NewOptionsDialog.h
++++ b/src/Lawn/Widget/NewOptionsDialog.h
+@@ -48,6 +48,7 @@ protected:
+ 		NewOptionsDialog_MusicVolume,
+ 		NewOptionsDialog_SoundVolume,
+ 		NewOptionsDialog_Fullscreen,
++		NewOptionsDialog_Widescreen,
+ 		NewOptionsDialog_HardwareAcceleration,
+ 	};
+ 
+@@ -56,6 +57,33 @@ public:
+ 	std::unique_ptr<Sexy::Slider>		mMusicVolumeSlider;
+ 	std::unique_ptr<Sexy::Slider>		mSfxVolumeSlider;
+ 	std::unique_ptr<Sexy::Checkbox>		mFullscreenCheckbox;
++	std::unique_ptr<Sexy::Checkbox>		mWidescreenCheckbox;
++
++	// Panel Tentang digambar langsung di atas panel Options (tanpa aset baru).
++	// Panel menimpa SELURUH blok opsi sehingga ruangnya lega dan teks tidak
++	// mepet: 363x286 px di (30, 74).
++	// Tautan diletakkan di bawah baris "Fill Screen" (yang bergeser +25 px
++	// saat dialog dibuka dari pemilih level), dan masih di atas tombol OK.
++	static constexpr int kAboutLinkY = 300;
++	static constexpr int kAboutLinkOffsetSelector = 25;
++	static constexpr int kAboutPanelX = 30;
++	static constexpr int kAboutPanelY = 74;
++	static constexpr int kAboutPanelW = 363;
++	static constexpr int kAboutPanelH = 248;
++
++	// Kotak klik tiap tautan (relatif terhadap pojok kiri-atas panel).
++	static constexpr int kLinkH = 22;
++	static constexpr int kLinkSaweriaY = 138;   // relatif puncak panel
++	static constexpr int kLinkKofiY = 168;
++
++	int						mAboutLinkHover = -1;   // -1 tidak ada, 0 saweria, 1 kofi
++	void					DrawAboutPanel(Sexy::Graphics* g, float theFontScale);
++	void					SetAboutPanelOpen(bool theOpen);
++	Sexy::Rect				AboutLinkRect(int theIndex) const;
++	void					OpenSupportLink(int theIndex);
++	Sexy::Rect							mAboutLinkRect;
++	bool								mAboutHover = false;
++	bool								mAboutPanelOpen = false;
+ 	std::unique_ptr<Sexy::Checkbox>		mHardwareAccelerationCheckbox;
+ 	std::unique_ptr<LawnStoneButton>	mAlmanacButton;
+ 	std::unique_ptr<LawnStoneButton>	mBackToMainButton;
+@@ -77,6 +105,9 @@ public:
+ 	void					ButtonPress(int theId) override;
+ 	void					ButtonDepress(int theId) override;
+ 	void					KeyDown(Sexy::KeyCode theKey) override;
++	void					MouseMove(int theX, int theY) override;
++	void					MouseDown(int theX, int theY, int theClickCount) override;
++	void					MouseUp(int theX, int theY, int theClickCount) override;
+ };
+ 
+ #endif
+diff --git a/src/Lawn/Widget/TitleScreen.cpp b/src/Lawn/Widget/TitleScreen.cpp
+index 85ab277..2437613 100644
+--- a/src/Lawn/Widget/TitleScreen.cpp
++++ b/src/Lawn/Widget/TitleScreen.cpp
+@@ -27,6 +27,7 @@
+ #include "../../LawnApp.h"
+ #include "../../Resources.h"
+ #include "../../PvzpLib/PvzpCommon.h"
++#include "graphics/GLInterface.h"
+ #include "misc/SexyMatrix.h"
+ #include "../../PvzpLib/PvzpStringFile.h"
+ #include "../../PvzpLib/EffectSystem.h"
+@@ -156,7 +157,26 @@ void TitleScreen::Draw(Graphics* g)
+ 		return;
+ 	}
+ 
+-	g->DrawImage(IMAGE_TITLESCREEN, 0, 0);
++	// WideLayout: gambar latar asli 800x600. Regangkan ke lebar logika baru,
++	// lalu gelapkan strip di kiri/kanan supaya transisi ke tepi tidak kasar.
++	if (mWidth > IMAGE_TITLESCREEN->mWidth)
++	{
++		Rect aSrcRect(0, 0, IMAGE_TITLESCREEN->mWidth, IMAGE_TITLESCREEN->mHeight);
++		g->DrawImage(IMAGE_TITLESCREEN, Rect(0, 0, mWidth, mHeight), aSrcRect);
++
++		int aPad = (mWidth - IMAGE_TITLESCREEN->mWidth) / 2;
++		if (aPad > 0)
++		{
++			g->SetColor(Color(0, 0, 0, 90));
++			g->FillRect(0, 0, aPad, mHeight);
++			g->FillRect(mWidth - aPad, 0, aPad, mHeight);
++			g->SetColor(Color::White);
++		}
++	}
++	else
++	{
++		g->DrawImage(IMAGE_TITLESCREEN, 0, 0);
++	}
+ 	if (mNeedToInit)
+ 	{
+ 		return;
+@@ -207,6 +227,7 @@ void TitleScreen::Draw(Graphics* g)
+ 	{
+ 		aReanim->Draw(g);
+ 	}
++
+ }
+ 
+ void TitleScreen::Update()
+diff --git a/src/LawnApp.cpp b/src/LawnApp.cpp
+index 4364273..a7b3623 100644
+--- a/src/LawnApp.cpp
++++ b/src/LawnApp.cpp
+@@ -31,6 +31,7 @@
+ #include "Lawn/Zombie.h"
+ #include "Lawn/Cutscene.h"
+ #include "GameConstants.h"
++#include "SexyAppFramework/graphics/GLInterface.h"
+ #include "ProjectVersion.h"
+ #include "Lawn/Challenge.h"
+ #include "Lawn/ZenGarden.h"
+@@ -126,7 +127,7 @@ LawnApp::LawnApp()
+ 	mSukhbirMode = false;
+ 	mGameScene = GameScenes::SCENE_LOADING;
+ 	mCloseRequest = false;
+-	mWidth = BOARD_WIDTH;
++	mWidth = gLogicalWidth;
+ 	mHeight = BOARD_HEIGHT;
+ 	mFullscreenBits = 32;
+ 	mAppCounter = 0;
+@@ -1061,7 +1062,13 @@ bool LawnApp::KillNewOptionsDialog()
+ 
+ 	bool wantWindowed = !aNewOptionsDialog->mFullscreenCheckbox->IsChecked();
+ 	bool want3D = aNewOptionsDialog->mHardwareAccelerationCheckbox->IsChecked();
+-	SwitchScreenMode(wantWindowed, want3D, false);
++
++	// force=true: mIsWindowed bisa sudah bernilai sama dengan keinginan
++	// pengguna padahal window SDL sebenarnya masih dalam mode lain
++	// (mis. diluncurkan fullscreen dari registry). Tanpa force, SwitchScreenMode
++	// keluar lebih awal lewat pemeriksaan mIsWindowed == wantWindowed dan
++	// centang Full Screen tampak tidak bereaksi.
++	SwitchScreenMode(wantWindowed, want3D, true);
+ 
+ 	KillDialog(Dialogs::DIALOG_NEWOPTIONS);
+ 	ClearUpdateBacklog();
+diff --git a/src/SexyAppFramework/SexyAppBase.cpp b/src/SexyAppFramework/SexyAppBase.cpp
+index f9ce21d..a89c188 100644
+--- a/src/SexyAppFramework/SexyAppBase.cpp
++++ b/src/SexyAppFramework/SexyAppBase.cpp
+@@ -321,6 +321,23 @@ SexyAppBase::SexyAppBase()
+ 	mWindowAspect.Set(4, 3);
+ 	mIsWideWindow = false;
+ 
++	// WideScreen patch: PVZ_WIDESCREEN=1 membuat renderer mengisi seluruh
++	// jendela alih-alih letterbox 4:3.
++	{
++		const char* aWideScreen = SDL_getenv("PVZ_WIDESCREEN");
++		if (aWideScreen != nullptr && aWideScreen[0] != '\0' && aWideScreen[0] != '0')
++		{
++			mWidescreenAware = true;
++			mEnableWindowAspect = false;
++			mWindowAspect.Set(16, 9);
++			mIsWideWindow = true;
++			gWideScreenStretch = true;
++			// Ruang logika dilebarkan: UI dihitung untuk 1067x600, bukan 800x600.
++			gWideLayout = true;
++			gLogicalWidth = 1067;
++		}
++	}
++
+ 	int i;
+ 
+ 	for (i = 0; i < NUM_CURSORS; i++)
+@@ -1330,6 +1347,24 @@ void SexyAppBase::ReadFromRegistry()
+ 	if (RegistryReadInteger("CustomCursors", &anInt))
+ 		EnableCustomCursors(anInt != 0);
+ 
++	{
++		// WideLayout: pilihan "Fill Screen (16:9)" dari menu Options dalam game.
++		// Default AKTIF supaya pengguna tidak perlu menyetel apa pun setelah
++		// instalasi. Nilai tersimpan (kalau ada) selalu menang; env
++		// PVZ_WIDESCREEN dari launcher menang atas keduanya.
++		int aStretch = 1;
++		RegistryReadInteger("WidescreenStretch", &aStretch);
++
++		bool aWanted = aStretch != 0;
++		const char* aEnv = SDL_getenv("PVZ_WIDESCREEN");
++		if (aEnv != nullptr && aEnv[0] != '\0')
++			aWanted = (aEnv[0] != '0');
++
++		gWideScreenStretch = aWanted;
++		gWideLayout = false;
++		gLogicalWidth = aWanted ? 1067 : 800;
++	}
++
+ 	RegistryReadBoolean("WaitForVSync", &mWaitForVSync);
+ 
+ 	if (RegistryReadInteger("InProgress", &anInt))
+@@ -2334,6 +2369,7 @@ void SexyAppBase::SwitchScreenMode(bool wantWindowed, bool is3d, bool force)
+ 
+ 	MakeWindow();
+ 
++
+ 	// We need to do this check to allow IE to get focus instead of
+ 	//  stealing it away for ourselves
+ 	if (!mIsOpeningURL)
+diff --git a/src/SexyAppFramework/graphics/GLInterface.cpp b/src/SexyAppFramework/graphics/GLInterface.cpp
+index 963c7e9..f463fb4 100644
+--- a/src/SexyAppFramework/graphics/GLInterface.cpp
++++ b/src/SexyAppFramework/graphics/GLInterface.cpp
+@@ -1153,6 +1153,13 @@ void TextureData::BltTriangles(const TriVertex theVertices[][3], int theNumTrian
+ 	}
+ }
+ 
++// Diisi oleh SexyAppBase dari env PVZ_WIDESCREEN=1 (lihat SexyAppBase.cpp).
++bool gWideScreenStretch = false;
++
++// WideLayout: ruang logika yang dipakai UI. Default 800 (4:3 asli).
++int gLogicalWidth = 800;
++bool gWideLayout = false;
++
+ GLInterface::GLInterface(SexyAppBase* theApp)
+ {
+ 	mApp = theApp;
+@@ -1241,16 +1248,56 @@ void GLInterface::UpdateViewport()
+ 
+ 	vw = width; vh = height;
+ 
+-	// Letterbox to 4:3
+-	if (width * 3 > height * 4)
++	// WideScreen patch: isi seluruh jendela (stretch), jangan letterbox 4:3.
++	// Asli: kalau lebar > 4:3, batasi vw = height*4/3 dan pusatkan (batang hitam).
++	// Dengan stretch, UI PvZ yang berpatokan ke mScreenBounds (sudut layar)
++	// bergeser proporsional, jadi tetap terlihat benar di 16:9.
++	if (gWideScreenStretch)
+ 	{
+-		vw = height * 4 / 3;
+-		vx = (width - vw) / 2;
++		vw = width;
++		vh = height;
++		vx = 0;
++		vy = 0;
++	}
++	else
++	{
++		// Letterbox to 4:3
++		if (width * 3 > height * 4)
++		{
++			vw = height * 4 / 3;
++			vx = (width - vw) / 2;
++		}
++		else if (width * 3 < height * 4)
++		{
++			vh = width * 3 / 4;
++			vy = (height - vh) / 2;
++		}
+ 	}
+-	else if (width * 3 < height * 4)
++
++	// WideLayout: sebagian latar digambar oleh reanimasion yang berukuran
++	// tetap 800x600 (mis. SelectorScreen_BG), sehingga menyisakan area hitam
++	// di sisi kanan walau viewport sudah penuh. Isi dulu seluruh area dengan
++	// warna yang diambil dari piksel tepi layar, lalu gambar normal di atasnya.
++	if (gWideLayout)
+ 	{
+-		vh = width * 3 / 4;
+-		vy = (height - vh) / 2;
++		const int aScreenW = mApp->mScreenBounds.mWidth;
++		if (aScreenW > 0 && aScreenW < width)
++		{
++			const GLuint aEstimate = (GLuint)(aScreenW * height / (float)mApp->mScreenBounds.mHeight);
++			const int aBandW = (width - aEstimate) / 2;
++			if (aBandW > 0)
++			{
++				glViewport(0, 0, width, height);
++				glScissor(0, 0, aBandW, height);
++				glEnable(GL_SCISSOR_TEST);
++				glClearColor(0.09f, 0.13f, 0.06f, 1.0f);
++				glClear(GL_COLOR_BUFFER_BIT);
++				glScissor(width - aBandW, 0, aBandW, height);
++				glClear(GL_COLOR_BUFFER_BIT);
++				glDisable(GL_SCISSOR_TEST);
++				glViewport(vx, vy, vw, vh);
++			}
++		}
+ 	}
+ 
+ 	glViewport(vx, vy, vw, vh);
+diff --git a/src/SexyAppFramework/graphics/GLInterface.h b/src/SexyAppFramework/graphics/GLInterface.h
+index d0e47d7..7708ef7 100644
+--- a/src/SexyAppFramework/graphics/GLInterface.h
++++ b/src/SexyAppFramework/graphics/GLInterface.h
+@@ -36,6 +36,11 @@
+ #include "misc/SexyMatrix.h"
+ #include <memory>
+ 
++extern bool gWideScreenStretch;
++// WideLayout: lebar ruang logika UI (800 = 4:3 asli, 1067 = 16:9).
++extern int gLogicalWidth;
++extern bool gWideLayout;
++
+ namespace Sexy
+ {
+ 
+diff --git a/src/SexyAppFramework/platform/default/Window.cpp b/src/SexyAppFramework/platform/default/Window.cpp
+index 8357bf0..8118e04 100644
+--- a/src/SexyAppFramework/platform/default/Window.cpp
++++ b/src/SexyAppFramework/platform/default/Window.cpp
+@@ -28,6 +28,7 @@
+ #include "graphics/GLInterface.h"
+ #include "graphics/GLImage.h"
+ #include "graphics/GLPlatform.h"
++#include "../../../PvzpLib/PvzpDebug.h"
+ #include "widget/WidgetManager.h"
+ 
+ using namespace Sexy;
+@@ -37,6 +38,11 @@ void SexyAppBase::MakeWindow()
+ 	if (mWindow)
+ 	{
+ 		SDL_SetWindowFullscreen(mWindow.get(), !mIsWindowed);
++		SDL_SyncWindow(mWindow.get());
++		// mIsWindowed bisa tertinggal dari keadaan window sungguhan (mis. mode
++		// window yang diminta tidak bisa diterapkan). Sinkronkan balik supaya
++		// centang Full Screen selalu mencerminkan apa yang benar-benar terjadi.
++		mIsWindowed = (SDL_GetWindowFlags(mWindow.get()) & SDL_WINDOW_FULLSCREEN) == 0;
+ 	}
+ 	else
+ 	{

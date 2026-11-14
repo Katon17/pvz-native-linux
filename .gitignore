@@ -1,0 +1,25 @@
+# Build output
+release/
+*.deb
+build/
+dist/
+
+# Engine binary is fetched, not committed
+lib/pvz-native/engine/pvz-portable
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Local test artifacts
+*.iso
+*.zip
+!tests/fixtures/**

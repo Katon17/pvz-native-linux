@@ -1,0 +1,24 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: pvz-native
+Source: https://github.com/Katon17/pvz-native-linux
+
+Files: *
+Copyright: 2026 Katon Bagaskoro
+License: GPL-3.0-or-later
+ On Debian systems the full text of the GNU General Public License version 3
+ can be found in /usr/share/common-licenses/GPL-3.
+
+Files: lib/pvz-native/engine/pvz-portable
+Copyright: 2026 Zhou Qiankang <wszqkzqk@qq.com>
+           2005-2009 PopCap Games, Inc. (SexyAppFramework portions)
+License: LGPL-3.0-or-later
+ The bundled engine binary is an unmodified build of PvZ-Portable 0.2.7,
+ distributed under the GNU Lesser General Public License v3.0 or later.
+ Full text: /usr/share/common-licenses/LGPL-3
+ Upstream: https://github.com/wszqkzqk/PvZ-Portable
+
+Files: share/doc/pvz-native/NOTICE
+License: other
+ The game "Plants vs. Zombies" and all related assets, names, characters and
+ trademarks are the property of Electronic Arts Inc. This package contains no
+ game assets whatsoever. Users must supply their own legally obtained copy.

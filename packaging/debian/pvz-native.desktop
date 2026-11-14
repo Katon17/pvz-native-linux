@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Plants vs. Zombies
+GenericName=Lawn Defense Game
+Comment=Native Linux port of Plants vs. Zombies: Game of the Year
+Exec=pvz-native %f
+TryExec=pvz-native
+Icon=io.github.katon17.pvz-native
+Terminal=false
+Categories=Game;StrategyGame;
+Keywords=pvz;plants;zombies;popcap;tower;defense;
+StartupNotify=true
+StartupWMClass=pvz-portable

@@ -1,0 +1,26 @@
+Package: pvz-native
+Version: @VERSION@
+Section: games
+Priority: optional
+Architecture: amd64
+Maintainer: Katon Bagaskoro <cimong2356@gmail.com>
+Installed-Size: @INSTALLED_SIZE@
+Depends: python3 (>= 3.9), zenity | kdialog, libc6 (>= 2.34),
+         python3-gi, gir1.2-gtk-3.0,
+         cabextract, libopenmpt0, libmpg123-0, libvorbis0a,
+         libvorbisfile3, libogg0, zlib1g
+Recommends: libgl1-mesa-dri, mesa-vulkan-drivers
+Suggests: vulkan-tools, gamemode
+Homepage: https://github.com/Katon17/pvz-native-linux
+Description: Native Linux port of Plants vs. Zombies (Game of the Year)
+ Launcher and asset manager for a native, plugin-free Linux build of
+ Plants vs. Zombies: Game of the Year Edition, powered by the open source
+ PvZ-Portable engine (SDL3 + OpenGL ES 2.0).
+ .
+ This package ships the engine and the launcher only. It does not contain
+ game assets. You must supply main.pak and the properties/ folder from a
+ copy of the game you own (Steam, EA App, or the original PopCap CD/ISO).
+ The first-run wizard extracts those files from your ISO, ZIP, game folder,
+ or directly from the official Plants vs. Zombies installer (.exe).
+ .
+ Requires OpenGL ES 2.0 or OpenGL 2.1 capable graphics drivers.
