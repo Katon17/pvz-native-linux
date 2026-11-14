@@ -90,8 +90,31 @@ This project handles the boring, error-prone parts:
 | Problem you would hit | What this launcher does |
 |---|---|
 | "Where do I put `main.pak`?" | First-run wizard extracts it for you |
-| ISO mounting needs `fuse`, `7z`, or root | **Pure-Python ISO9660 reader** — no external tools, no root |
+| ISO mounting needs `fuse`, `7z`, or root | **Pure-Python ISO9660 reader** — no external tools, no root, no mount |
 | Official CD is an *installer*, not loose files | Reads the CAB **inside** the installer and extracts `main.pak` for you — no Wine, no Windows |
+
+### ISO is pure Python. CAB mostly is — one case is not.
+
+"Pure-Python, no external tools" applies to ISO reading, and that is the point
+of the row above: **you never need to mount anything**. Full breakdown:
+
+| Your source | How it is read | External tool |
+|---|---|---|
+| **ISO** (`.iso`) | Pure-Python ISO9660 reader, reads the image as an ordinary file | **none** |
+| **ZIP** | Pure-Python `zipfile` | **none** |
+| **Folder** (Steam / EA App / existing install) | Plain filesystem access | **none** |
+| **Installer** (`.exe`) → CAB, **MSZIP or uncompressed** | Pure-Python MSCF decoder (`tools/pvznative/cab.py`) | **none** |
+| **Installer** (`.exe`) → CAB, **LZX or Quantum** | `cabextract` subprocess | **`cabextract`** |
+
+The last row is the one that matters in practice, because **PopCap's own
+PvZ GOTY 1.2.0.1073 installer uses LZX compression**. Python's standard library
+cannot decode LZX, and writing an LZX decoder by hand is not worth the risk, so
+the launcher tries the built-in decoder first and falls back to `cabextract`
+only when it hits a compression it cannot handle.
+
+`cabextract` is declared as a package dependency, so
+`sudo apt install ./pvz-native_*.deb` installs it automatically. If you use an
+ISO, a Steam folder, or a ZIP, it is never invoked at all.
 | Steam GOTY (1.2.0.1096) has cosmetic bugs | Detects the asset version *before* you play and warns you |
 | Game silently does nothing on launch | Engine exits with code 0 on fatal errors — launcher inspects the log and shows a real dialog |
 | Game data mixed into `/usr` | Assets live in your home directory, survive package upgrades |
@@ -103,17 +126,17 @@ This project handles the boring, error-prone parts:
 
 ### Quick install (Debian / Ubuntu / Linux Mint / Pop!_OS)
 
-Download `pvz-native_0.1.0_amd64.deb` from
+Download `pvz-native_0.5.2_amd64.deb` from
 [Releases](https://github.com/Katon17/pvz-native-linux/releases), then:
 
 ```bash
-sudo apt install ./pvz-native_0.1.0_amd64.deb
+sudo apt install ./pvz-native_0.5.2_amd64.deb
 ```
 
 Verify the download first (recommended):
 
 ```bash
-sha256sum -c pvz-native_0.1.0_amd64.deb.sha256
+sha256sum -c pvz-native_0.5.2_amd64.deb.sha256
 ```
 
 ### First run
@@ -137,7 +160,7 @@ Subsequent launches skip the wizard and go straight into the game.
 The `.deb` is just a tar archive with extra metadata. On Arch or Fedora:
 
 ```bash
-tar -xf pvz-native-0.1.0.tar.gz -C ~/.local   # launcher + python package
+tar -xf pvz-native-0.5.2-x86_64.tar.gz -C ~/.local   # launcher + python package
 pvz-native --setup                            # then point at your assets
 ```
 
@@ -370,7 +393,7 @@ cd pvz-native-linux
 ./build-deb.sh --fetch-engine     # downloads + verifies upstream engine
 ```
 
-Output: `release/pvz-native_0.1.0_amd64.deb` plus a `.sha256` file.
+Output: `release/pvz-native_0.5.2_amd64.deb` plus a `.sha256` file.
 
 To hack on the launcher without rebuilding:
 

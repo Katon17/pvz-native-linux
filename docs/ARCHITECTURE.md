@@ -87,7 +87,7 @@ modified.
 | ISO 9660 | `CD001` magic at offset 0x8001; level-1 uppercase names handled (case-insensitive matching) |
 | ZIP | `PK\x03\x04` magic |
 | Folder | Check for the presence of `main.pak` + `properties/` |
-| Installer `.exe` | CAB payload located via the `MSCF` magic inside the binary, then `cabextract -F "*main.pak"` |
+| Installer `.exe` | CAB payload located via the `MSCF` magic inside the binary, then decoded by the built-in MSCF reader (NONE/MSZIP) or, for LZX/Quantum, by `cabextract -F "*main.pak"` |
 
 **Pitfalls already handled:** a level-1 ISO stores folder names in uppercase
 (`PROPERTIES/`), while the code expects `properties/`. All names inside an

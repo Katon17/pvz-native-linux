@@ -235,7 +235,7 @@ Installed and checked automatically by `apt`:
 | `python3` ≥ 3.9 | launcher & wizard |
 | `python3-gi`, `gir1.2-gtk-3.0` | Settings & About windows |
 | `zenity` \| `kdialog` | file dialog when picking an ISO |
-| `cabextract` | extraction from the `.exe` installer |
+| `cabextract` | extracting `main.pak` from `.exe` installers that use LZX/Quantum compression |
 | `libopenmpt0`, `libmpg123-0`, `libvorbis0a`, `libvorbisfile3`, `libogg0` | audio |
 | `libc6` ≥ 2.34, `zlib1g` | basics |
 

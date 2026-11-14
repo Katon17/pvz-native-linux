@@ -233,7 +233,7 @@ Dicek otomatis oleh `apt` saat instalasi:
 | `python3` ≥ 3.9 | launcher & wizard |
 | `python3-gi`, `gir1.2-gtk-3.0` | jendela Pengaturan & Tentang |
 | `zenity` \| `kdialog` | dialog file saat memilih ISO |
-| `cabextract` | ekstraksi dari installer `.exe` |
+| `cabextract` | mengekstrak `main.pak` dari installer `.exe` berkompresi LZX/Quantum |
 | `libopenmpt0`, `libmpg123-0`, `libvorbis0a`, `libvorbisfile3`, `libogg0` | audio |
 | `libc6` ≥ 2.34, `zlib1g` | dasar |
 

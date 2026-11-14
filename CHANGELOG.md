@@ -14,6 +14,35 @@ versi mengikuti [Semantic Versioning](https://semver.org/lang/id/).
 
 ## [0.5.2] — 2026-11-14
 
+### Diperbaiki — dua ketidaksinkronan di README
+Dilaporkan saat menyiapkan postingan Reddit.
+
+**1. Versi paket di perintah instalasi masih `0.1.0`.** Rilis sudah di `0.5.2`
+sejak beberapa versi lalu, tapi blok *Quick install*, perintah verifikasi
+checksum, perintah tarball, dan contoh output build di README Inggris maupun
+Indonesia masih menyebut `0.1.0`. Siapa pun yang menyalin perintah itu akan
+gagal karena berkasnya tidak ada. Kesepuluh tempat sudah diselaraskan ke
+`0.5.2`. (`Fixed in 0.2.1` di bagian troubleshooting justru **benar** — itu
+menandai versi tempat perbaikan `partner_logo` masuk, bukan versi terkini.)
+
+**2. Klaim "pure Python" vs `cabextract` terkesan kontradiktif.** Penjelasan
+dipisah agar jelas jalur mana yang butuh tool:
+
+| Sumber | Pembaca | Tool eksternal |
+|---|---|---|
+| ISO | ISO9660 murni Python | tidak ada |
+| ZIP | `zipfile` | tidak ada |
+| Folder | filesystem | tidak ada |
+| `.exe` → CAB MSZIP/NONE | MSCF murni Python | tidak ada |
+| `.exe` → CAB LZX/Quantum | `cabextract` | `cabextract` |
+
+Baris terakhir yang relevan sehari-hari: **installer PvZ GOTY 1.2.0.1073
+memakai LZX**, yang tidak bisa didekode pustaka standar Python. Launcher
+mencoba dekoder bawaan dulu, baru jatuh ke `cabextract`. Ditambahkan di
+`README.md` dan `README.id.md` sebagai sub-bagian baru, dan tabel deteksi
+`.exe` di `docs/ARCHITECTURE.md` (EN + ID) serta tabel dependensi di
+`docs/SPECIFICATIONS.md` (EN + ID) ikut dipertegas.
+
 ### Ditambahkan — tangkapan layar di README
 Permintaan: "tambahin 2 foto ini dong di readme biar orang lihat ga bosan".
 

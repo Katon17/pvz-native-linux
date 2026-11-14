@@ -86,7 +86,7 @@ Sisanya (installer, sisa ISO) tidak disalin dan tidak diubah.
 | ISO 9660 | Magic `CD001` di offset 0x8001; level-1 uppercase ditangani (matching case-insensitive) |
 | ZIP | Magic `PK\x03\x04` |
 | Folder | Cek keberadaan `main.pak` + `properties/` |
-| Installer `.exe` | Payload CAB dicari lewat magic `MSCF` di dalam biner, lalu `cabextract -F "*main.pak"` |
+| Installer `.exe` | Payload CAB dicari lewat magic `MSCF` di dalam biner, lalu didekode pembaca MSCF bawaan (NONE/MSZIP) atau, untuk LZX/Quantum, oleh `cabextract -F "*main.pak"` |
 
 **Jebakan yang sudah ditangani:** ISO level-1 menyimpan nama folder dalam
 huruf besar (`PROPERTIES/`), sedangkan kode mengharapkan `properties/`.

@@ -81,8 +81,31 @@ Yang dibereskan launcher ini:
 | Masalah yang biasanya kamu temui | Yang dilakukan launcher |
 |---|---|
 | "`main.pak`-nya ditaruh di mana?" | Wizard first-run mengekstraknya untukmu |
-| Mount ISO butuh `fuse`/`7z`/root | **Pembaca ISO9660 murni Python** — tanpa tool eksternal, tanpa root |
+| Mount ISO butuh `fuse`/`7z`/root | **Pembaca ISO9660 murni Python** — tanpa tool eksternal, tanpa root, tanpa mount |
 | CD resmi isinya *installer*, bukan file longgar | Membaca CAB **di dalam** installer dan mengekstrak `main.pak` — tanpa Wine, tanpa Windows |
+
+### ISO murni Python. CAB hampir seluruhnya — satu kasus tidak.
+
+"Tanpa tool eksternal" berlaku untuk pembacaan ISO, dan itulah inti baris di
+atas: **kamu tidak perlu me-mount apa pun**. Rincian lengkapnya:
+
+| Sumbermu | Cara dibaca | Tool eksternal |
+|---|---|---|
+| **ISO** (`.iso`) | Pembaca ISO9660 murni Python, membaca image sebagai berkas biasa | **tidak ada** |
+| **ZIP** | `zipfile` murni Python | **tidak ada** |
+| **Folder** (Steam / EA App / instalasi lama) | Akses filesystem biasa | **tidak ada** |
+| **Installer** (`.exe`) → CAB **MSZIP / tanpa kompresi** | Dekoder MSCF murni Python (`tools/pvznative/cab.py`) | **tidak ada** |
+| **Installer** (`.exe`) → CAB **LZX atau Quantum** | subprocess `cabextract` | **`cabextract`** |
+
+Baris terakhir itulah yang penting dalam praktik, karena **installer PvZ GOTY
+1.2.0.1073 buatan PopCap memakai kompresi LZX**. Pustaka standar Python tidak
+bisa mendekode LZX, dan menulis dekoder LZX sendiri tidak sepadan risikonya.
+Karena itu launcher mencoba dekoder bawaan dulu, baru jatuh ke `cabextract`
+saat menemui kompresi yang tidak sanggup ditangani.
+
+`cabextract` sudah dicantumkan sebagai dependensi paket, jadi
+`sudo apt install ./pvz-native_*.deb` memasangnya otomatis. Kalau kamu memakai
+ISO, folder Steam, atau ZIP, tool itu tidak pernah dipanggil sama sekali.
 | Aset Steam GOTY (1.2.0.1096) punya bug kosmetik | Versi aset dideteksi **sebelum** main, lalu diberi peringatan |
 | Game diklik tapi tidak terjadi apa-apa | Engine keluar dengan kode 0 walau gagal fatal — launcher memeriksa log dan menampilkan dialog sungguhan |
 | Data game tercampur ke `/usr` | Aset disimpan di home directory, aman saat update paket |
@@ -94,17 +117,17 @@ Yang dibereskan launcher ini:
 
 ### Cara cepat (Debian / Ubuntu / Linux Mint / Pop!_OS)
 
-Unduh `pvz-native_0.1.0_amd64.deb` dari
+Unduh `pvz-native_0.5.2_amd64.deb` dari
 [Releases](https://github.com/Katon17/pvz-native-linux/releases), lalu:
 
 ```bash
-sudo apt install ./pvz-native_0.1.0_amd64.deb
+sudo apt install ./pvz-native_0.5.2_amd64.deb
 ```
 
 Sebaiknya verifikasi dulu:
 
 ```bash
-sha256sum -c pvz-native_0.1.0_amd64.deb.sha256
+sha256sum -c pvz-native_0.5.2_amd64.deb.sha256
 ```
 
 ### Pertama kali dijalankan
@@ -127,7 +150,7 @@ berikutnya tidak menanyakan apa pun lagi.
 File `.deb` pada dasarnya arsip tar dengan metadata tambahan:
 
 ```bash
-tar -xf pvz-native-0.1.0.tar.gz -C ~/.local
+tar -xf pvz-native-0.5.2-x86_64.tar.gz -C ~/.local
 pvz-native --setup
 ```
 
@@ -430,7 +453,7 @@ cd pvz-native-linux
 ./build-deb.sh --fetch-engine     # unduh + verifikasi engine upstream
 ```
 
-Hasil: `release/pvz-native_0.1.0_amd64.deb` beserta file `.sha256`.
+Hasil: `release/pvz-native_0.5.2_amd64.deb` beserta file `.sha256`.
 
 Untuk mengembangkan launcher tanpa build ulang:
 
